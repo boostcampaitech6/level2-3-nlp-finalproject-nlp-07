@@ -77,15 +77,16 @@ class _DatasetABC(Dataset, ABC):
         self.__iter_count = 0
 
     def reduce_num_samples(self, num_samples: int) -> None:
-        r"""
-        Reduce the size of the dataset, by keeping `num_samples` samples.
+        pass
+        # r"""
+        # Reduce the size of the dataset, by keeping `num_samples` samples.
 
-        :param num_samples: number of samples to keep. They will be randomly picked.
-        """
-        idx = randint(0, len(self), (num_samples,))
-        self.samples = [self.samples[id_] for id_ in idx.tolist()]
-        if self.labels is not None:
-            self.labels = [self.labels[id_] for id_ in idx.tolist()]
+        # :param num_samples: number of samples to keep. They will be randomly picked.
+        # """
+        # idx = randint(0, len(self), (num_samples,))
+        # self.samples = [self.samples[id_] for id_ in idx.tolist()]
+        # if self.labels is not None:
+        #     self.labels = [self.labels[id_] for id_ in idx.tolist()]
 
     def __len__(self) -> int:
         return len(self.samples)
@@ -117,7 +118,7 @@ class _DatasetABC(Dataset, ABC):
 # class DatasetTok(_DatasetABC): ...
 
 
-class Codeplay_Dataset(_DatasetABC):
+class CodeplayDataset(_DatasetABC):
     r"""
     Basic ``Dataset`` loading and tokenizing MIDIs or JSON token files.
 
@@ -165,11 +166,11 @@ class Codeplay_Dataset(_DatasetABC):
 
     def __init__(
         self,
-        files_paths: Sequence[Path],
-        genre_token_ids: list[int],
-        bar4_token_ids: list[int],
         min_seq_len: int,
         max_seq_len: int,
+        files_paths: Sequence[Path],
+        genre_token_ids: list[int] | None = None,
+        bar4_token_ids: list[int] | None = None,
         tokenizer: MIDITokenizer = None,
         one_token_stream: bool = True,
         func_to_get_labels: Callable[[Score | Sequence, Path], int] | None = None,
@@ -244,11 +245,3 @@ def load_midi_paths(url: str|list[str]) -> list[Path]:
         midi_paths += list(Path('../data/chunks').rglob("*.mid"))
     
     return midi_paths
-
-def split_train_valid(data, valid_ratio=0.1):
-    total_num = len(data)
-    num_valid = round(total_num * valid_ratio)
-    shuffle(data)
-    train_data = data[:num_valid]
-    valid_data = data[num_valid:]
-    return train_data, valid_data
