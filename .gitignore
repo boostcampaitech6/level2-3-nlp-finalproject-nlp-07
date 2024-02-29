@@ -15,5 +15,12 @@ build/
 .env
 
 # Ingore ml datasets
-datasets/
+data/
+
+# Ignore python cache
+__pycache__/
+
+
 ```
+### 3.2.2. .gitignore for Python
+```gitignore
