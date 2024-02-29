@@ -17,9 +17,11 @@ build/
 # Ingore ml datasets
 data/
 
+# Ignore ml models
+models/
+
 # Ignore python cache
 __pycache__/
-
 
 ```
 ### 3.2.2. .gitignore for Python
