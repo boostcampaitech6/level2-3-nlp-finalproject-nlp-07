@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
     from miditok import MIDITokenizer
+    
+from random import shuffle
 
 #TODO - bar4 단위로 split하는 코드로 수정할 것
 def split_seq_in_subsequences(
@@ -242,3 +244,11 @@ def load_midi_paths(url: str|list[str]) -> list[Path]:
         midi_paths += list(Path('../data/chunks').rglob("*.mid"))
     
     return midi_paths
+
+def split_train_valid(data, valid_ratio=0.1):
+    total_num = len(data)
+    num_valid = round(total_num * valid_ratio)
+    shuffle(data)
+    train_data = data[:num_valid]
+    valid_data = data[num_valid:]
+    return train_data, valid_data
