@@ -1,0 +1,9 @@
+miditok==3.0.1
+note-seq==0.0.5
+numpy==1.26.3
+pandas==2.2.0
+pygame==2.5.2
+symusic==0.3.5
+torch==2.0.1
+tqdm==4.66.1
+transformers==4.37.1

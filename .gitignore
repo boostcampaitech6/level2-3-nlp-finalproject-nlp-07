@@ -1,0 +1,28 @@
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build output
+build/
+
+# Ignore IDE files
+.vscode/
+.idea/
+
+# Ignore logs
+*.log
+
+# Ignore environment variables file
+.env
+
+# Ingore ml datasets
+data/
+
+# Ignore ml models
+models/
+
+# Ignore python cache
+__pycache__/
+
+```
+### 3.2.2. .gitignore for Python
+```gitignore
