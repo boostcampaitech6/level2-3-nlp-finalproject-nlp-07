@@ -69,8 +69,8 @@ def main():
     # Commented parameters correspond to the small model
     config = {"output_dir": output_path,
             "num_train_epochs": 30, # 학습 epoch 자유롭게 변경. 저는 30 epoch 걸어놓고 early stopping 했습니다.
-            "per_device_train_batch_size": 32,
-            "per_device_eval_batch_size": 32,
+            "per_device_train_batch_size": 16,
+            "per_device_eval_batch_size": 16,
             "evaluation_strategy": "steps",
             "save_strategy": "steps",
             "eval_steps": steps,
