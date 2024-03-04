@@ -10,7 +10,6 @@ from load_data import load_midi_paths, CodeplayDataset
 from trainer import CodeplayTrainer
 from utils import split_train_valid
 
-
 SEED = 2024
 deterministic = False
 
@@ -27,8 +26,9 @@ if deterministic: # cudnn random seed 고정 - 고정 시 학습 속도가 느�
 def main():
     tokenizer = get_custom_tokenizer()
     
-    midi_paths = ['../data/chunks/']
+    midi_paths = ['../data/chunks8']
     midi_paths = load_midi_paths(midi_paths)
+    print('num of midi files:', len(midi_paths))
     random.shuffle(midi_paths)
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths)
     
@@ -45,6 +45,7 @@ def main():
     n_head=4
     n_emb=1024
 
+    # gpt2 config
     config = AutoConfig.from_pretrained(
         "gpt2",
         vocab_size=len(tokenizer),

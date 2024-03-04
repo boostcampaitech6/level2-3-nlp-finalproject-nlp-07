@@ -242,6 +242,6 @@ def load_midi_paths(url: str|list[str]) -> list[Path]:
 
     midi_paths = []
     for p in tqdm(paths):
-        midi_paths += list(Path('../data/chunks').rglob("*.mid"))
+        midi_paths += list(Path(p).glob("**/*.mid"))
     
     return midi_paths
