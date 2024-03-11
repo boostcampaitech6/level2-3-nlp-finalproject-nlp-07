@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate MIDI</title>
+</head>
+<body>
+    <h2>Generate MIDI</h2>
+    <label for="text_input">Enter text:</label><br>
+    <textarea id="text_input" name="text" rows="4" cols="50"></textarea><br><br>
+    <button onclick="generateMidi()">Generate MIDI</button>
+    
+    <script>
+        function generateMidi() {
+            var text_input = document.getElementById("text_input").value;
+
+            fetch('/generate_midi/', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                body: text_input,
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                // MIDI 파일 다운로드 링크 생성
+                var downloadLink = document.createElement('a');
+                downloadLink.href = window.URL.createObjectURL(blob);
+                downloadLink.download = 'generated_midi.mid';
+                downloadLink.textContent = 'Download MIDI';
+                document.body.appendChild(downloadLink);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>

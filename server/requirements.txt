@@ -1,0 +1,10 @@
+miditok
+note-seq
+numpy
+pandas
+symusic
+torch
+transformers
+accelerate
+pyyaml
+pytz

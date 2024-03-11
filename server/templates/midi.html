@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text to MIDI</title>
+</head>
+<body>
+    <h2>Text to MIDI Converter</h2>
+    <form id="textToMidiForm">
+        <label for="text_input">Enter text:</label><br>
+        <input type="text" id="text_input" name="text"><br><br>
+        <input type="submit" value="Convert to MIDI">
+    </form>
+    <div id="result"></div>
+
+    <h2>Upload MIDI File</h2>
+    <form id="uploadForm" action="/upload_midi/" method="post" enctype="multipart/form-data">
+        <input type="file" name="midi_file">
+        <input type="submit" value="Upload MIDI">
+    </form>
+    <div id="message"></div>
+
+
+    <script>
+        document.getElementById('textToMidiForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // 폼의 기본 동작인 페이지 새로고침을 방지합니다.
+
+            var formData = new FormData(this);
+
+            // POST 요청을 보냅니다.
+            fetch('/generate_midi/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error('Failed to generate MIDI file');
+                }
+            })
+            .then(blob => {
+                console.log(blob)
+                // MIDI 파일 다운로드 버튼 생성
+                var downloadLink = document.createElement('a');
+                downloadLink.href = window.URL.createObjectURL(blob);
+                downloadLink.download = 'generated_midi.mid';
+                downloadLink.textContent = 'Download MIDI';
+                document.getElementById('result').innerHTML = ''; // 결과 영역 초기화
+                document.getElementById('result').appendChild(downloadLink);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = 'Failed to generate MIDI file';
+            });
+        });
+    </script>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var formData = new FormData(this);
+
+            fetch('/upload_midi/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    document.getElementById('message').textContent = "MIDI file uploaded successfully!";
+                } else {
+                    document.getElementById('message').textContent = "Failed to upload MIDI file: " + data.message;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('message').textContent = "Failed to upload MIDI file";
+            });
+        });
+    </script>
+
+
+</body>
+</html>
