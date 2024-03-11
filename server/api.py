@@ -12,6 +12,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from pydantic import BaseModel
+from utils.generate import generate_initial_track, generate_additional_track
 
 class TextData(BaseModel):
     text: str
@@ -49,21 +50,7 @@ async def generate_midi(req: Request):
     logging.info(f"Received text: {text}")
     
     ## generation midi
-    initial_token = "BOS_None"
-    generated_ids = torch.tensor([[tokenizer[initial_token]]])
-
-    iteration_number = 0
-
-    input_ids = generated_ids
-    eos_token_id = tokenizer["Track_End"]
-    temperature = 0.8
-    generated_ids = model.generate(
-        input_ids,
-        max_length=1024,
-        do_sample=True,
-        temperature=temperature,
-        eos_token_id=eos_token_id,
-    ).cpu()
+    generated_ids = generate_initial_track(model, tokenizer, temperature=0.8)
 
     midi_data = tokenizer.tokens_to_midi(generated_ids[0])
 
