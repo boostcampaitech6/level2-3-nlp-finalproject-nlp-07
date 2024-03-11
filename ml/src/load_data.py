@@ -17,8 +17,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
 
     from miditok import MIDITokenizer
-    
-from random import shuffle
 
 #TODO - bar4 단위로 split하는 코드로 수정할 것
 def split_seq_in_subsequences(
@@ -168,7 +166,7 @@ class CodeplayDataset(_DatasetABC):
         self,
         min_seq_len: int,
         max_seq_len: int,
-        files_paths: Sequence[Path],
+        midis: list[Score] | None = None,
         genre_token_ids: list[int] | None = None,
         bar4_token_ids: list[int] | None = None,
         tokenizer: MIDITokenizer = None,
@@ -184,26 +182,24 @@ class CodeplayDataset(_DatasetABC):
         #     one_token_stream = tokenizer.one_token_stream
 
         for i in tqdm(
-            range(len(files_paths)),
-            desc=f"Loading data: {files_paths[0].parent}",
-            miniters=int(len(files_paths) / 20),
+            range(len(midis)),
+            # desc=f"Loading data: {midis[0].parent}",
+            miniters=int(len(midis) / 20),
             maxinterval=480,
         ):
-            file_path = files_paths[i]
             label = None
-            # Loading a MIDI file
-            if file_path.suffix in MIDI_FILES_EXTENSIONS:
-                midi = Score(file_path)
-                tokens_ids = tokenizer(midi)
-                tokens_ids = tokens_ids.ids
+            midi = midis[i]
+            tokens_ids = tokenizer(midi)
+            tokens_ids = tokens_ids.ids
                 
+            #TODO - path -> midi 구조 변경으로 인한 수정 필요
             # Concat genre token
-            meta_ids = []
-            if genre_token_ids is not None:
-                meta_ids += [genre_token_ids[i]]
-            if bar4_token_ids is not None:
-                meta_ids += [bar4_token_ids[i]]
-            tokens_ids = meta_ids + tokens_ids
+            # meta_ids = []
+            # if genre_token_ids is not None:
+            #     meta_ids += [genre_token_ids[i]]
+            # if bar4_token_ids is not None:
+            #     meta_ids += [bar4_token_ids[i]]
+            # tokens_ids = meta_ids + tokens_ids
 
             # Cut tokens in samples of appropriate length
             subseqs = split_seq_in_subsequences(tokens_ids, min_seq_len, max_seq_len)
@@ -245,3 +241,39 @@ def load_midi_paths(url: str|list[str]) -> list[Path]:
         midi_paths += list(Path(p).glob("**/*.mid"))
     
     return midi_paths
+
+def chunk_midi(midi_paths: list[Path], chunk_bar_num=4):
+    r"""
+    Chunk the midi files into chunks of 4 bars.
+    
+    :param midi_paths: list of paths to the MIDI files.
+    :param chunk_bar_num: number of bars in a chunk.
+    :return: list of the MIDI files.
+    """
+    chunks = []
+    err_cnt = 0
+    print(f'Chunking {len(midi_paths)} midi files')
+    for midi_path in tqdm(midi_paths):
+        try:
+            midi = Score(midi_path)
+        except Exception as e:
+            err_cnt += 1
+            continue
+        
+        ticks_per_chunk = midi.tpq * 4 * chunk_bar_num
+        nb_chunk = midi.end() // ticks_per_chunk
+        if nb_chunk < 2:
+            chunks.append(midi)
+            continue
+        elif nb_chunk > 48:
+            continue
+        
+        for i in range(nb_chunk):
+            chunk = midi.copy()
+            chunk = chunk.clip(i*ticks_per_chunk, (i+1)*ticks_per_chunk)
+            chunk = chunk.shift_time(-i*ticks_per_chunk)
+            chunks.append(chunk)
+    
+    print(f'Chunked {len(chunks)} chunks')
+    print(f'Failed to chunk {err_cnt} midi files')
+    return chunks

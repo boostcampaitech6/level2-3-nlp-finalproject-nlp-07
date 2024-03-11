@@ -5,7 +5,7 @@ import torch
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
 from tokenizer import get_custom_tokenizer
 from miditok.pytorch_data import DataCollator
-from load_data import load_midi_paths, CodeplayDataset
+from load_data import load_midi_paths, CodeplayDataset, chunk_midi
 from trainer import CodeplayTrainer
 from utils import split_train_valid
 
@@ -29,15 +29,20 @@ MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
 def main():
     tokenizer = get_custom_tokenizer()
     
-    midi_paths = ['../data/chunks4/jazz-midi-clean']
+    midi_paths = ['../data/full/lakh_clean_midi']
+    print(midi_paths)
     midi_paths = load_midi_paths(midi_paths)
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=SEED)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
-    # midi_paths to midi to tokens
-    train_dataset = CodeplayDataset(files_paths=train_midi_paths, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
-    valid_dataset = CodeplayDataset(files_paths=valid_midi_paths, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
+    # midi paths to midi chunks
+    train_midi_chunks = chunk_midi(train_midi_paths)
+    valid_midi_chunks = chunk_midi(valid_midi_paths)
+    
+    # midi chunks to midi tokens
+    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
+    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
@@ -45,9 +50,9 @@ def main():
     context_length = MAX_SEQ_LEN
 
     #TODO: Change this based on size of the data
-    n_layer=6
-    n_head=4
-    n_emb=1024
+    n_layer=11
+    n_head=12
+    n_emb=384
 
     # gpt2 config
     model_config = AutoConfig.from_pretrained(
@@ -64,6 +69,8 @@ def main():
 
     #NOTE - nvidia update 필요합니다!
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('device:', device)
+    
     model = GPT2LMHeadModel(model_config)
     model.to(device)
     
