@@ -27,10 +27,26 @@ model = GPT2LMHeadModel.from_pretrained(model_path)
 tokenizer = get_custom_tokenizer()
 
 @router.post("/generate_midi/")
-async def generate_midi(text: str = Form(...)):
-
-    # 로그에 텍스트 출력
-    logging.info("Received text: %s", text)
+async def generate_midi(req: Request):
+    """
+    client fetch format
+    fetch(
+      "http://0.0.0.0:8200/generate_midi/",
+      // "http://223.130.130.56:8200/generate_midi/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: text,
+        }),
+      }
+    )
+    """
+    data = await req.json()
+    text = data["prompt"]
+    logging.info(f"Received text: {text}")
     
     ## generation midi
     initial_token = "BOS_None"
