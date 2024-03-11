@@ -2,12 +2,6 @@ from miditok import MMM, TokenizerConfig
 from typing import Union, Optional
 from pathlib import Path
 
-GENRE_TOKEN_LIST = [
-    "Genre_Rock",
-    "Genre_Pop",
-]
-BAR4_TOKEN_LIST = ['Bar_'+str(i) for i in range(24)]
-
 class CodeplayTokenizer(MMM):
     def __init__(self, config: TokenizerConfig):
         super().__init__(config)
@@ -53,27 +47,43 @@ class CodeplayTokenizer(MMM):
             return self.push_to_hub(repo_id=repo_id, **kwargs)
         return None
 
-    
+#NOTE - maximus 64 genre tokens
+GENRE_TOKEN_LIST = ['Rock', 'Pop', 'Jazz', 'Unk']
+GENRE_TOKEN_LIST = ['Genre_'+genre for genre in GENRE_TOKEN_LIST]
 
-def get_custom_tokenizer(genre=False, bar4=False):
-    additonal_toknes = []
-    if genre:
-        additonal_toknes += GENRE_TOKEN_LIST
-        print("Adding genre tokens to tokenizer...")
-    if bar4:
-        additonal_toknes += BAR4_TOKEN_LIST
-        print("Adding bar4 tokens to tokenizer...")
-    
+#NOTE - maximus 64 cut tokens
+CUT_TOKEN_LIST = ['Cut_'+str(i) for i in range(64)] + ['Cut_Unk']
+
+def get_custom_tokenizer():
     TOKENIZER_NAME = CodeplayTokenizer
     config = TokenizerConfig(
         num_velocities=16,
         use_chord=True,
         use_pitch_intervals=True,
-        use_programs=True,
-        special_tokens=["PAD", "BOS", "EOS", "MASK"]+additonal_toknes
-    )
-
+        use_programs=True,)
     tokenizer = TOKENIZER_NAME(config)
+    
+    # MMM tokenizer
+    mmm = len(tokenizer)-1
+    print(f'MMM Tokenizer bandwith : 0 ~ {mmm}')
+    
+    # Add genre token
+    for genre_tk in GENRE_TOKEN_LIST:
+        tokenizer.add_to_vocab(genre_tk)
+    # Add genre Unused token
+    for i in range(40-len(GENRE_TOKEN_LIST)):
+        tokenizer.add_to_vocab(f'Genre_{i}')
+    genre = len(tokenizer)-1
+    print(f'Genre Tokenizer bandwith : {mmm+1} ~ {genre}')
+    
+    # Add cut(bar4) token
+    for cut_tk in CUT_TOKEN_LIST:
+        tokenizer.add_to_vocab(cut_tk)
+    # Add cut Unused token
+    for i in range(64-len(CUT_TOKEN_LIST)):
+        tokenizer.add_to_vocab(f'Cut_{i}')
+    cut = len(tokenizer)-1
+    print(f'Cut Tokenizer bandwith : {genre+1} ~ {cut}')
+    
+    print(f'Total Tokenizer bandwith : 0 ~ {cut}, ({len(tokenizer)} tokens)')
     return tokenizer
-
-
