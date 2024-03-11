@@ -18,4 +18,3 @@ def generate_initial_track(model, tokenizer, temperature=0.8):
     initial_token_id = tokenizer[BOS_TOKEN]
     input_ids = torch.tensor([[initial_token_id]])
     return generate_additional_track(input_ids, model, tokenizer, temperature)
-

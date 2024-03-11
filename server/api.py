@@ -3,7 +3,7 @@ from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from fastapi.templating import Jinja2Templates
 from transformers import GPT2LMHeadModel
-from tokenizer import get_custom_tokenizer
+from miditok import MMM, TokenizerConfig
 import torch
 import os, shutil
 from symusic import Score
@@ -23,9 +23,13 @@ templates = Jinja2Templates(directory="templates")
 MODEL_DIR = "./model/"
 TEMP_DIR = "./temp/"
 
-model_path = os.path.join(MODEL_DIR, "bar4-ch4-checkpoint-8100")
+MODEL_NAME = "bar4-ch4-checkpoint-8100"
+
+model_path = os.path.join(MODEL_DIR, MODEL_NAME)
 model = GPT2LMHeadModel.from_pretrained(model_path) 
-tokenizer = get_custom_tokenizer()
+
+tokenizer_path = os.path.join(MODEL_DIR, MODEL_NAME+'/tokenizer.json')
+tokenizer = MMM(TokenizerConfig(), tokenizer_path)
 
 @router.post("/generate_midi/")
 async def generate_midi(req: Request):
