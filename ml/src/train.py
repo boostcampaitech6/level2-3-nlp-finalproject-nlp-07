@@ -5,9 +5,10 @@ import torch
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
 from tokenizer import get_custom_tokenizer
 from miditok.pytorch_data import DataCollator
-from load_data import load_midi_paths, CodeplayDataset, chunk_midi
+from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi
 from trainer import CodeplayTrainer
 from utils import split_train_valid
+from datetime import datetime
 
 SEED = 2024
 deterministic = False
@@ -29,7 +30,7 @@ MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
 def main():
     tokenizer = get_custom_tokenizer()
     
-    midi_paths = ['../data/full/lakh_clean_midi']
+    midi_paths = ['../data/full/jazz-midi-clean']
     print(midi_paths)
     midi_paths = load_midi_paths(midi_paths)
     print('num of midi files:', len(midi_paths))
@@ -37,8 +38,11 @@ def main():
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
     # midi paths to midi chunks
-    train_midi_chunks = chunk_midi(train_midi_paths)
-    valid_midi_chunks = chunk_midi(valid_midi_paths)
+    # train_midi_chunks = chunk_midi(train_midi_paths)
+    # valid_midi_chunks = chunk_midi(valid_midi_paths)
+    
+    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=4, overlap=2)
+    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=4, overlap=2)
     
     # midi chunks to midi tokens
     train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
@@ -76,8 +80,10 @@ def main():
     
     
     # Get the output directory with timestamp.
-    output_path = "../models"
-    steps = 500
+    # output_path with timestamp
+    DATASET_NAME = 'jazz-midi-clean'
+    output_path = "../models/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_" + DATASET_NAME
+    steps = 400
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
@@ -111,7 +117,7 @@ def main():
         eval_dataset=valid_dataset,
         data_collator=collator,
         tokenizer=tokenizer,
-        callbacks = [EarlyStoppingCallback(early_stopping_patience=5)] # Early Stopping patience 자유롭게 변경
+        callbacks = [EarlyStoppingCallback(early_stopping_patience=8)] # Early Stopping patience 자유롭게 변경
     )
     
     trainer.train()    

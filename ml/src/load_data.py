@@ -189,7 +189,7 @@ class CodeplayDataset(_DatasetABC):
             label = None
             midi, cut_idx = midis[i]
             tokens = tokenizer(midi)
-            tokens = tokens.tokens
+            tokens_ids = tokens.ids
                 
             #TODO - path -> midi 구조 변경으로 인한 수정 필요
             # Concat genre token
