@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from utils.generate import generate_initial_track, generate_additional_track
 
 class TextData(BaseModel):
-    text: str
+    prompt: str
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -32,12 +32,12 @@ tokenizer_path = os.path.join(MODEL_DIR, MODEL_NAME+'/tokenizer.json')
 tokenizer = MMM(TokenizerConfig(), tokenizer_path)
 
 @router.post("/generate_midi/")
-async def generate_midi(req: Request):
+async def generate_midi(req: TextData):
     """
     client fetch format
     fetch(
-      "http://0.0.0.0:8200/generate_midi/",
-      // "http://223.130.130.56:8200/generate_midi/",
+      //  "http://0.0.0.0:8200/generate_midi/",
+      "http://223.130.162.67:8200/generate_midi/",
       {
         method: "POST",
         headers: {
@@ -49,9 +49,8 @@ async def generate_midi(req: Request):
       }
     )
     """
-    data = await req.json()
-    text = data["prompt"]
-    logging.info(f"Received text: {text}")
+    text = req.prompt
+    logging.info(f"input_text : {text}")
     
     ## generation midi
     generated_ids = generate_initial_track(model, tokenizer, temperature=0.8)
