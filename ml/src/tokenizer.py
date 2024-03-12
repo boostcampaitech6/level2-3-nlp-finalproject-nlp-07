@@ -50,7 +50,7 @@ class CodeplayTokenizer(MMM):
 GENRE_TOKEN_LIST = ['Rock', 'Pop', 'Jazz']
 GENRE_TOKEN_LIST = ['Genre_Unk'] + ['Genre_'+genre for genre in GENRE_TOKEN_LIST]
 GENRE_TOKEN_LIST += ['Genre_'+str(i+1) for i in range(40-len(GENRE_TOKEN_LIST))] #40
-CUT_TOKEN_LIST = ['Cut_Unk'] + ['Cut_'+str(i+1) for i in range(63)] # 64
+BAR2_TOKEN_LIST = ['Bar2_Unk'] + ['Bar2_'+str(i+1) for i in range(127)] # 128
 
 def get_custom_tokenizer():
     TOKENIZER_NAME = CodeplayTokenizer
@@ -72,11 +72,11 @@ def get_custom_tokenizer():
     print(f'Genre Tokenizer bandwith : {mmm+1} ~ {genre}, ({genre-mmm} tokens)')
     
     # Add cut(bar4) token
-    for cut_tk in CUT_TOKEN_LIST:
+    for cut_tk in BAR2_TOKEN_LIST:
         tokenizer.add_to_vocab(cut_tk)
     # Add cut Unused token
     cut = len(tokenizer)-1
-    print(f'Cut Tokenizer bandwith : {genre+1} ~ {cut}, ({cut-genre} tokens)')
+    print(f'Bar2 Cut Tokenizer bandwith : {genre+1} ~ {cut}, ({cut-genre} tokens)')
     
     print(f'Total Tokenizer bandwith : 0 ~ {cut}, ({len(tokenizer)} tokens)')
     return tokenizer
