@@ -188,8 +188,20 @@ class CodeplayDataset(_DatasetABC):
         ):
             label = None
             midi, cut_idx = midis[i]
-            tokens = tokenizer(midi)
-            tokens_ids = tokens.ids
+            tokens = tokenizer(midi).tokens
+            
+            nnn_tokens = []
+            i = 0
+            while i < len(tokens):
+                tk = tokens[i]
+                if tk.startswith('Pitch_'):
+                    new_tk = f'{tokens[i]}+{tokens[i+1]}+{tokens[i+2]}'
+                    nnn_tokens.append(new_tk)
+                    i += 3
+                else:
+                    nnn_tokens.append(tk)
+                    i += 1
+            tokens_ids = [tokenizer[tk] for tk in nnn_tokens]
                 
             #TODO - path -> midi 구조 변경으로 인한 수정 필요
             # Concat genre token

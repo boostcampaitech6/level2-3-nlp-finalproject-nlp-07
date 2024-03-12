@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
-from tokenizer import get_custom_tokenizer
+from tokenizer import get_custom_tokenizer, get_nnn_tokenizer
 from miditok.pytorch_data import DataCollator
 from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi
 from trainer import CodeplayTrainer
@@ -28,7 +28,8 @@ MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
 # MAX_SEQ_LEN, BATCH_SIZE = 512, 32
 
 def main():
-    tokenizer = get_custom_tokenizer()
+    # tokenizer = get_custom_tokenizer()
+    tokenizer = get_nnn_tokenizer()
     
     midi_paths = ['../data/full/jazz-midi-clean']
     print(midi_paths)
@@ -54,9 +55,9 @@ def main():
     context_length = MAX_SEQ_LEN
 
     #TODO: Change this based on size of the data
-    n_layer=12
-    n_head=12
-    n_emb=384
+    n_layer=6
+    n_head=6
+    n_emb=768
 
     # gpt2 config
     model_config = AutoConfig.from_pretrained(
@@ -81,13 +82,13 @@ def main():
     
     # Get the output directory with timestamp.
     # output_path with timestamp
-    DATASET_NAME = 'jazz-midi-clean'
+    DATASET_NAME = 'jazz-NNN'
     output_path = "../models/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_" + DATASET_NAME
     steps = 400
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
-        "num_train_epochs": 30, # 학습 epoch 자유롭게 변경. 저는 30 epoch 걸어놓고 early stopping 했습니다.
+        "num_train_epochs": 40, # 학습 epoch 자유롭게 변경. 저는 30 epoch 걸어놓고 early stopping 했습니다.
         "per_device_train_batch_size": BATCH_SIZE,
         "per_device_eval_batch_size": BATCH_SIZE,
         "evaluation_strategy": "steps",

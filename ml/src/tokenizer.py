@@ -80,3 +80,28 @@ def get_custom_tokenizer():
     
     print(f'Total Tokenizer bandwith : 0 ~ {cut}, ({len(tokenizer)} tokens)')
     return tokenizer
+
+def get_nnn_tokenizer():
+    NNN = CodeplayTokenizer
+    config = TokenizerConfig(
+        num_velocities=8,
+        use_programs=True
+    )
+    tokenizer = NNN(config)
+    prev_len = len(tokenizer)
+    vocabs = list(tokenizer.vocab.keys())
+    
+    pitches = [v for v in vocabs if v.startswith('Pitch_') ]
+    velocities = [v for v in vocabs if v.startswith('Velocity_') ]
+    durations = [v for v in vocabs if v.startswith('Duration_') ]
+    
+    for p in pitches:
+        for v in velocities:
+            for d in durations:
+                new_tk = f'{p}+{v}+{d}'
+                tokenizer.add_to_vocab(new_tk)
+    
+    print(f'MMM Tokenizer bandwith : 0 ~ {prev_len}, ({prev_len} tokens)')
+    print(f'NNN Tokenizer bandwith : {prev_len} ~ {len(tokenizer)}, ({len(tokenizer)-prev_len} tokens)')
+    return tokenizer
+    
