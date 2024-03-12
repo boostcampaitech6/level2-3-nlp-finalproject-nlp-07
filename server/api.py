@@ -9,7 +9,7 @@ import os, shutil
 from symusic import Score
 import logging
 # 로깅 설정
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from pydantic import BaseModel
 from utils.generate import generate_initial_track, generate_additional_track
