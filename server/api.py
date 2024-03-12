@@ -65,7 +65,7 @@ async def generate_midi(req: Request):
     return StreamingResponse(open(file_path, "rb"), media_type="audio/midi")
 
 @router.post("/upload_midi/")
-async def upload_midi(midi_file: UploadFile = File(...)):
+async def receive_midi(midi_file: UploadFile = File(...), instnum: int = Form(...)) -> str:
     temp_file_path = os.path.join(TEMP_DIR, "temp_upload.mid")
     try:
         # 업로드된 파일을 임시 폴더에 저장
