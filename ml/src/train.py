@@ -50,7 +50,7 @@ def main():
     context_length = MAX_SEQ_LEN
 
     #TODO: Change this based on size of the data
-    n_layer=11
+    n_layer=12
     n_head=12
     n_emb=384
 
@@ -77,7 +77,7 @@ def main():
     
     # Get the output directory with timestamp.
     output_path = "../models"
-    steps = 100
+    steps = 500
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
