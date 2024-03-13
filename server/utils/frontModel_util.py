@@ -1,11 +1,13 @@
 import torch
 from torch import nn
-from transformers import BertPreTrainedModel, RobertaModel
+from transformers import BertPreTrainedModel, RobertaModel, AutoTokenizer
 from transformers.modeling_outputs import SequenceClassifierOutput
 from typing import Optional, Tuple, Union
 
 from tqdm import tqdm
 import pickle
+import os
+from settings import MODEL_DIR, FRONT_MODEL_NAME, PICKLE_PATH
 
 class customRobertaForSequenceClassification(BertPreTrainedModel):
     def __init__(self, config, num_labels1 = None, num_labels2 = None, num_labels3 = None ):
@@ -100,7 +102,7 @@ class customRobertaForSequenceClassification(BertPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-    
+        
 def id2labelData_labels(label_data_path ='./labels.pkl'):
     with open(label_data_path,'rb') as f:
         emotion_labels=pickle.load(f)
@@ -111,3 +113,21 @@ def id2labelData_labels(label_data_path ='./labels.pkl'):
     id2label_genre = {k:l for k, l in enumerate(genre_labels)}
     return id2label_emotion, id2label_tempo, id2label_genre
     
+def initialize_front_model():
+    model = customRobertaForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(FRONT_MODEL_NAME)
+    return model, tokenizer
+
+def extract_condition(text, front_model, front_tokenizer):
+    inputs = front_tokenizer(text, return_tensors='pt')
+    result = front_model(**inputs).logits
+
+    emotion_id = int(result[0].detach().argmax())
+    tempo_id = int(result[1].detach().argmax())
+    genre_id = int(result[2].detach().argmax())
+
+    pickle_path = os.path.join(MODEL_DIR, PICKLE_PATH)
+    emotion_dict , tempo_dict, genre_dict = id2labelData_labels(pickle_path)
+
+    emotion , tempo, genre = emotion_dict[emotion_id], tempo_dict[tempo_id], genre_dict[genre_id]
+    return emotion , tempo, genre
