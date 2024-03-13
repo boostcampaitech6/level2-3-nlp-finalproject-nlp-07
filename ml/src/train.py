@@ -39,9 +39,9 @@ def main():
     args["batch_size"] = 16
     
     args["tokenizer"] = "NNN-vel4"
-    if args["tokenizer"] == "NNN-4":
+    if args["tokenizer"] == "NNN-vel4":
         tokenizer = get_nnn_tokenizer(4)
-    elif args["tokenizer"] == "NNN-8":
+    elif args["tokenizer"] == "NNN-vel8":
         tokenizer = get_nnn_tokenizer(8)
     elif args["tokenizer"] == "MMM":
         tokenizer = get_custom_tokenizer()
@@ -55,13 +55,13 @@ def main():
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
     args["chunks_bar_num"] = 4
-    args["overlap"] = 2
+    args["overlap"] = 0
     train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
     valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
     
     # midi chunks to midi tokens
-    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
-    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
+    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
+    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
@@ -99,7 +99,7 @@ def main():
     # Get the output directory with timestamp.
     # output_path with timestamp
     # datetime.now().strftime("%Y%m%d-%H%M%S")
-    if args["title"]:
+    if 'title' in args:
         output_path = f"../models/{args['title']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     else:
         output_path = f"../models/{args['data']}-chunk{args['chunks_bar_num']}-ov{args['overlap']}-{args['model_name']}-{args['tokenizer']}/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
