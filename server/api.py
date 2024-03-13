@@ -12,7 +12,9 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from pydantic import BaseModel
-from utils.generate import generate_initial_track, generate_additional_track
+from server.utils.generateModel_util import generate_initial_track, generate_additional_track
+from transformers import AutoTokenizer
+from server.utils.frontModel_util import customRobertaForSequenceClassification, id2labelData_labels
 
 class TextData(BaseModel):
     prompt: str
@@ -31,15 +33,10 @@ model = GPT2LMHeadModel.from_pretrained(model_path)
 tokenizer_path = os.path.join(MODEL_DIR, MODEL_NAME+'/tokenizer.json')
 tokenizer = MMM(TokenizerConfig(), tokenizer_path)
 
-## 추가되는 부분
-from transformers import AutoTokenizer
-
-## frontModelFunction.py 파일과 pickle 필요
-from utils.frontModelFunction import customRobertaForSequenceClassification, id2labelData_labels
 # 모델 필요
 front_model_path = 'SangGank/my-front-model'
-front_tokenizer = AutoTokenizer.from_pretrained(front_model_path)
 front_model = customRobertaForSequenceClassification.from_pretrained(front_model_path)
+front_tokenizer = AutoTokenizer.from_pretrained(front_model_path)
 
 # pickle 저장 위치
 pickle_path = './model/labels.pkl'
