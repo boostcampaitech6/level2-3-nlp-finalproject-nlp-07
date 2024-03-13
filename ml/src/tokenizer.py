@@ -81,10 +81,10 @@ def get_custom_tokenizer():
     print(f'Total Tokenizer bandwith : 0 ~ {cut}, ({len(tokenizer)} tokens)')
     return tokenizer
 
-def get_nnn_tokenizer():
+def get_nnn_tokenizer(num_velocities=8):
     NNN = CodeplayTokenizer
     config = TokenizerConfig(
-        num_velocities=8,
+        num_velocities=num_velocities,
         use_programs=True
     )
     tokenizer = NNN(config)

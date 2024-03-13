@@ -23,27 +23,41 @@ if deterministic: # cudnn random seed 고정 - 고정 시 학습 속도가 느�
 	torch.backends.cudnn.deterministic = True
 	torch.backends.cudnn.benchmark = False
 
-# MAX_SEQ_LEN, BATCH_SIZE = 2048, 8 # 8마디 용
-MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
-# MAX_SEQ_LEN, BATCH_SIZE = 512, 32
+args_data = {
+    "Jazz": "../data/full/jazz-midi-clean",
+    "Lakh": "../data/full/lakh_clean_midi",
+}
 
 def main():
-    # tokenizer = get_custom_tokenizer()
-    tokenizer = get_nnn_tokenizer()
+    args = {}
+    # args["user"] = "devBuzz142"
+    # args["title"] = "lakh-NNN"
     
-    midi_paths = ['../data/full/jazz-midi-clean']
+    # MAX_SEQ_LEN, BATCH_SIZE = 2048, 8 # 8마디 용
+    # MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
+    args["max_seq_len"] = 1024
+    args["batch_size"] = 16
+    
+    args["tokenizer"] = "NNN-vel4"
+    if args["tokenizer"] == "NNN-4":
+        tokenizer = get_nnn_tokenizer(4)
+    elif args["tokenizer"] == "NNN-8":
+        tokenizer = get_nnn_tokenizer(8)
+    elif args["tokenizer"] == "MMM":
+        tokenizer = get_custom_tokenizer()
+    
+    args["data"] = "Lakh"
+    midi_paths = args_data[args["data"]]
     print(midi_paths)
     midi_paths = load_midi_paths(midi_paths)
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=SEED)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
-    # midi paths to midi chunks
-    # train_midi_chunks = chunk_midi(train_midi_paths)
-    # valid_midi_chunks = chunk_midi(valid_midi_paths)
-    
-    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=4, overlap=2)
-    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=4, overlap=2)
+    args["chunks_bar_num"] = 4
+    args["overlap"] = 2
+    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
+    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
     
     # midi chunks to midi tokens
     train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=MAX_SEQ_LEN-2, tokenizer=tokenizer)
@@ -52,16 +66,18 @@ def main():
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
     #TODO -  context length는 자유롭게 바꿔보며 실험해봐도 좋을 듯 합니다.
-    context_length = MAX_SEQ_LEN
+    context_length = args["max_seq_len"]
 
     #TODO: Change this based on size of the data
-    n_layer=6
-    n_head=6
-    n_emb=768
+    args["model_param"] = "6-6-768"
+    n_layer=int(args["model_param"].split("-")[0])
+    n_head=int(args["model_param"].split("-")[1])
+    n_emb=int(args["model_param"].split("-")[2])
 
     # gpt2 config
+    args["model_name"] = "gpt2"
     model_config = AutoConfig.from_pretrained(
-        "gpt2",
+        args["model_name"],
         vocab_size=len(tokenizer),
         n_positions=context_length,
         n_layer=n_layer,
@@ -82,15 +98,19 @@ def main():
     
     # Get the output directory with timestamp.
     # output_path with timestamp
-    DATASET_NAME = 'jazz-NNN'
-    output_path = "../models/" + datetime.now().strftime("%Y%m%d-%H%M%S") + "_" + DATASET_NAME
+    # datetime.now().strftime("%Y%m%d-%H%M%S")
+    if args["title"]:
+        output_path = f"../models/{args['title']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    else:
+        output_path = f"../models/{args['data']}-chunk{args['chunks_bar_num']}-ov{args['overlap']}-{args['model_name']}-{args['tokenizer']}/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        
     steps = 400
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
         "num_train_epochs": 40, # 학습 epoch 자유롭게 변경. 저는 30 epoch 걸어놓고 early stopping 했습니다.
-        "per_device_train_batch_size": BATCH_SIZE,
-        "per_device_eval_batch_size": BATCH_SIZE,
+        "per_device_train_batch_size": args["batch_size"],
+        "per_device_eval_batch_size": args["batch_size"],
         "evaluation_strategy": "steps",
         "save_strategy": "steps",
         "eval_steps": steps,
