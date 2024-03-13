@@ -28,6 +28,7 @@ front_model, front_tokenizer = initialize_front_model()
 
 # generate model initialize
 generate_model, generate_tokenizer = initialize_generate_model()
+
 @router.post("/generate_midi/")
 async def generate_midi(req: TextData):
     """
@@ -49,17 +50,9 @@ async def generate_midi(req: TextData):
     text = req.prompt
     logging.info(f"input_text : {text}")
 
-    # inputs = front_tokenizer(text, return_tensors='pt')
-    # result = front_model(**inputs).logits
-
-    # emotion_id = int(result[0].detach().argmax())
-    # tempo_id = int(result[1].detach().argmax())
-    # genre_id = int(result[2].detach().argmax())
-
-    # emotion , tempo, genre = emotion_dict[emotion_id], tempo_dict[tempo_id], genre_dict[genre_id]
-    
-    # # 로그에 텍스트 출력
-    # logging.info("emotion : %s,  tempo : %s,  genre : %s", emotion, tempo, genre)
+    # condition 추출
+    emotion , tempo, genre = extract_condition(text, front_model, front_tokenizer)
+    logging.info("emotion : %s,  tempo : %s,  genre : %s", emotion, tempo, genre)
     
     ## generation midi
     generated_ids = generate_initial_track(generate_model, generate_tokenizer, temperature=0.8)
@@ -94,6 +87,7 @@ async def receive_midi(midi_file: UploadFile = File(...), instnum: int = Form(..
     generated_ids = generate_additional_track(nnn_tokens_ids, generate_model, generate_tokenizer, temperature=0.8)
     mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), generate_tokenizer)
     midi_data = generate_tokenizer.tokens_to_midi(mmm_generated_ids)
+
     file_path = os.path.join(TEMP_DIR, "temp_additional.mid")
     midi_data.dump_midi(file_path)
     
