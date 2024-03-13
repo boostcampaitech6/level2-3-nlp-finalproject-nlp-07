@@ -31,6 +31,20 @@ model = GPT2LMHeadModel.from_pretrained(model_path)
 tokenizer_path = os.path.join(MODEL_DIR, MODEL_NAME+'/tokenizer.json')
 tokenizer = MMM(TokenizerConfig(), tokenizer_path)
 
+## 추가되는 부분
+from transformers import AutoTokenizer
+
+## frontModelFunction.py 파일과 pickle 필요
+from utils.frontModelFunction import customRobertaForSequenceClassification, id2labelData_labels
+# 모델 필요
+front_model_path = 'SangGank/my-front-model'
+front_tokenizer = AutoTokenizer.from_pretrained(front_model_path)
+front_model = customRobertaForSequenceClassification.from_pretrained(front_model_path)
+
+# pickle 저장 위치
+pickle_path = './model/labels.pkl'
+emotion_dict , tempo_dict, genre_dict = id2labelData_labels(pickle_path)
+
 @router.post("/generate_midi/")
 async def generate_midi(req: TextData):
     """
@@ -51,6 +65,18 @@ async def generate_midi(req: TextData):
     """
     text = req.prompt
     logging.info(f"input_text : {text}")
+
+    inputs = front_tokenizer(text, return_tensors='pt')
+    result = front_model(**inputs).logits
+
+    emotion_id = int(result[0].detach().argmax())
+    tempo_id = int(result[1].detach().argmax())
+    genre_id = int(result[2].detach().argmax())
+
+    emotion , tempo, genre = emotion_dict[emotion_id], tempo_dict[tempo_id], genre_dict[genre_id]
+    
+    # 로그에 텍스트 출력
+    logging.info("emotion : %s,  tempo : %s,  genre : %s", emotion, tempo, genre)
     
     ## generation midi
     generated_ids = generate_initial_track(model, tokenizer, temperature=0.8)
