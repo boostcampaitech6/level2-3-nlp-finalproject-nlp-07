@@ -1,7 +1,18 @@
 import torch
+from transformers import GPT2LMHeadModel
+from miditok import MMM, TokenizerConfig
+import os
+from settings import MODEL_DIR, GENERATE_MODEL_NAME
 
 BOS_TOKEN = "BOS_None"
 EOS_TOKEN = "Track_End"
+
+def initialize_generate_model():
+    model_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME)
+    tokenizer_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME+'/tokenizer.json')
+    model = GPT2LMHeadModel.from_pretrained(model_path)
+    tokenizer = MMM(TokenizerConfig(), tokenizer_path)
+    return model, tokenizer
 
 def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
     eos_token_id = tokenizer[EOS_TOKEN]
