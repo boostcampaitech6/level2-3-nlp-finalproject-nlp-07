@@ -1,50 +1,33 @@
-from fastapi import APIRouter, Form, File, UploadFile, Request
-from fastapi.responses import FileResponse
-from fastapi.responses import StreamingResponse
-from fastapi.templating import Jinja2Templates
-from transformers import GPT2LMHeadModel
-from miditok import MMM, TokenizerConfig
 import torch
-import os, shutil
+from fastapi import APIRouter, Form, File, UploadFile, Request
+from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
+
 from symusic import Score
-from pathlib import Path
+import os, shutil
 import logging
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from pydantic import BaseModel
-from utils.generateModel_util import generate_initial_track, generate_additional_track
-from transformers import AutoTokenizer
-from utils.frontModel_util import customRobertaForSequenceClassification, id2labelData_labels
+from utils.utils import clear_huggingface_cache
+from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_additional_track
+from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.tokenizer_converter import mmm_to_nnn, nnn_to_mmm
-from tokenizer_svr import get_nnn_tokenizer
+from settings import TEMP_DIR
+
+# 캐쉬 삭제
+clear_huggingface_cache(False)
 
 class TextData(BaseModel):
     prompt: str
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
-MODEL_DIR = "../ml/models"
-TEMP_DIR = "./temp/"
+# front model initialize
+front_model, front_tokenizer = initialize_front_model()
 
-MODEL_NAME = "nnn-vel8-lakh-checkpoint-16800"
-
-model_path = os.path.join(MODEL_DIR, MODEL_NAME)
-model = GPT2LMHeadModel.from_pretrained(model_path) 
-
-# tokenizer_path = os.path.join(MODEL_DIR, MODEL_NAME+'/tokenizer.json')
-tokenizer = get_nnn_tokenizer(8)
-
-# 모델 필요
-# front_model_path = 'SangGank/my-front-model'
-# front_model = customRobertaForSequenceClassification.from_pretrained(front_model_path)
-# front_tokenizer = AutoTokenizer.from_pretrained(front_model_path)
-
-# # pickle 저장 위치
-# pickle_path = './model/labels.pkl'
-# emotion_dict , tempo_dict, genre_dict = id2labelData_labels(pickle_path)
-
+# generate model initialize
+generate_model, generate_tokenizer = initialize_generate_model()
 @router.post("/generate_midi/")
 async def generate_midi(req: TextData):
     """
@@ -79,10 +62,10 @@ async def generate_midi(req: TextData):
     # logging.info("emotion : %s,  tempo : %s,  genre : %s", emotion, tempo, genre)
     
     ## generation midi
-    generated_ids = generate_initial_track(model, tokenizer, temperature=0.8)
+    generated_ids = generate_initial_track(generate_model, generate_tokenizer, temperature=0.8)
 
-    mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
-    midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
+    mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), generate_tokenizer)
+    midi_data = generate_tokenizer.tokens_to_midi(mmm_tokens_ids)
 
     file_path = os.path.join(TEMP_DIR, "temp_gen.mid")
     midi_data.dump_midi(file_path)
@@ -104,13 +87,13 @@ async def receive_midi(midi_file: UploadFile = File(...), instnum: int = Form(..
     except Exception as e:
         return {"status": "failed", "message": str(e)}
     
-    mmm_tokens_ids = tokenizer(midi).ids
-    nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
+    mmm_tokens_ids = generate_tokenizer(midi).ids
+    nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, generate_tokenizer)
     nnn_tokens_ids = torch.tensor([nnn_tokens_ids])
     
-    generated_ids = generate_additional_track(nnn_tokens_ids, model, tokenizer, temperature=0.8)
-    mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
-    midi_data = tokenizer.tokens_to_midi(mmm_generated_ids)
+    generated_ids = generate_additional_track(nnn_tokens_ids, generate_model, generate_tokenizer, temperature=0.8)
+    mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), generate_tokenizer)
+    midi_data = generate_tokenizer.tokens_to_midi(mmm_generated_ids)
     file_path = os.path.join(TEMP_DIR, "temp_additional.mid")
     midi_data.dump_midi(file_path)
     
