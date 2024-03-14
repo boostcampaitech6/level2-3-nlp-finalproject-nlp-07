@@ -193,7 +193,8 @@ def id2labelData_labels(label_data_path ='./labels.pkl'):
     return id2label_emotion, id2label_tempo, id2label_genre
     
 def initialize_front_model():
-    model = customRobertaForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
+    # model = customRobertaForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
+    model = customBertForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
     tokenizer = AutoTokenizer.from_pretrained(FRONT_MODEL_NAME)
     return model, tokenizer
 
