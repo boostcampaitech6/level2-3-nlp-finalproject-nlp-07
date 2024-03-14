@@ -1,0 +1,7 @@
+{
+    "MODEL_DIR": "./model/",
+    "GENERATE_MODEL_NAME": "nnn-vel8-lakh-checkpoint-16800",
+    "FRONT_MODEL_NAME": "SangGank/my-front-model",
+    "PICKLE_PATH": "labels.pkl",
+    "TEMP_DIR" : "./temp/"
+  }
