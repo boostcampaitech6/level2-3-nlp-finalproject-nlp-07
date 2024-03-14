@@ -3,5 +3,6 @@
     "GENERATE_MODEL_NAME": "nnn-vel8-lakh-checkpoint-16800",
     "FRONT_MODEL_NAME": "SangGank/my-front-model",
     "PICKLE_PATH": "labels.pkl",
+    "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",
     "TEMP_DIR" : "./temp/"
   }
