@@ -173,6 +173,7 @@ class CodeplayDataset(_DatasetABC):
         func_to_get_labels: Callable[[Score | Sequence, Path], int] | None = None,
         sample_key_name: str = "input_ids",
         labels_key_name: str = "labels",
+        use_meta: bool = False,
     ) -> None:
         labels = None
         samples = []
@@ -187,7 +188,10 @@ class CodeplayDataset(_DatasetABC):
             maxinterval=480,
         ):
             label = None
-            midi, genre, emotion, tempo = midis[i]
+            if use_meta:
+                midi, genre, emotion, tempo = midis[i]
+            else:
+                midi = midis[i][0]
             tokens = tokenizer(midi).tokens
             
             nnn_tokens = []
@@ -202,13 +206,14 @@ class CodeplayDataset(_DatasetABC):
                     nnn_tokens.append(tk)
                     i += 1
             tokens_ids = [tokenizer[tk] for tk in nnn_tokens]
-                
-            # Concat meta tokens
-            meta_ids = []
-            meta_ids.append(tokenizer[f'Genre_{genre}'])
-            meta_ids.append(tokenizer[f'Emotion_{emotion}'])
-            # meta_ids.append(tokenizer[f'Tempo_{tempo}'])
-            tokens_ids = meta_ids + tokens_ids
+             
+            if use_meta:   
+                # Concat meta tokens
+                meta_ids = []
+                meta_ids.append(tokenizer[f'Genre_{genre}'])
+                meta_ids.append(tokenizer[f'Emotion_{emotion}'])
+                # meta_ids.append(tokenizer[f'Tempo_{tempo}'])
+                tokens_ids = meta_ids + tokens_ids
 
             # Cut tokens in samples of appropriate length
             subseqs = split_seq_in_subsequences(tokens_ids, min_seq_len, max_seq_len)

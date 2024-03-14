@@ -52,11 +52,11 @@ def main():
         tokenizer = get_nnn_meta_tokenizer(4)
     
     #NOTE - sampled
-    fine_tune_data_path = '../../data/full/lakh_clean_midi_sampled'
-    metas = pd.read_csv('../data/full/lakh_clean_midi.csv')
+    fine_tune_data_path = '../data/full/lakh_clean_midi'
+    metas = pd.read_csv('../data/full/lakh_clean_midi/lakh_clean_midi_sampled.csv')
     metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
 
-    midi_paths = [[Path(fine_tune_data_path, row["file_path"]), row["genre"], row["emotion"], row["tempo(int)"]] for i, row in metas.iterrows() if Path(fine_tune_data_path, row['file_path']).exists()]
+    midi_paths = [[Path(fine_tune_data_path+f'/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(int)"]] for i, row in metas.iterrows() if Path(fine_tune_data_path+f"/{row['file_path']}").exists()]
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=SEED)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
@@ -72,7 +72,7 @@ def main():
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
-    model_config = AutoConfig.from_pretrained('../models/nnn-vel4-lakh-checkpoint-56000')
+    model_config = AutoConfig.from_pretrained('../models/Lakh-chunk4-ov0-gpt2-NNN-vel4/20240313-155345/checkpoint-56800')
 
     #NOTE - nvidia update 필요합니다!
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -87,7 +87,7 @@ def main():
     # datetime.now().strftime("%Y%m%d-%H%M%S")  
     output_path = f"../models/fine_tune/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-    steps = 400
+    steps = 200
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
@@ -127,5 +127,5 @@ def main():
     trainer.train()    
 
 if __name__ == '__main__':
-    print('Training model...')
+    print('finetuning model...')
     main()
