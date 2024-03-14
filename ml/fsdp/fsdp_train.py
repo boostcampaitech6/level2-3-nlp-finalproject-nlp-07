@@ -1,3 +1,4 @@
+# 1. Import necessary packages
 import os
 import argparse
 import torch
@@ -28,14 +29,17 @@ from datetime import datetime
 추가
 """
 from tokenizer import get_custom_tokenizer, get_nnn_tokenizer
+# from transformers import AutoConfig, GPT2LMHeadModel
 from transformers import GPT2LMHeadModel, GPT2Config
-from utils import *
+from utils import load_dataset
+from pytorch_transformers import WEIGHTS_NAME, CONFIG_NAME
+from load_data import CodeplayDataset, overlap_chunk_midi
+from miditok.pytorch_data import DataCollator
 
 # 2. Distributed training setup
 def setup(args):
     # initialize the process group
     ip = args.master_ip
-    # ip = "10.0.1.6"
     os.environ["MASTER_ADDR"] = ip
     dist.init_process_group("nccl")    
     torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
@@ -59,7 +63,6 @@ class MidiModel(GPT2LMHeadModel):
         super().__init__(config)
 
 def setup_tokenizer():
-    # tokenizer = get_custom_tokenizer()
     tokenizer = get_nnn_tokenizer()
     return tokenizer
 
@@ -164,22 +167,35 @@ def fsdp_main(args):
     world_size = args.world_size
     print("world_size: ", world_size)
 
-    train_data, valid_data = load_dataset()
+    
+    BASE_DIR = os.getcwd()
+    DATA_DIR = os.path.join(BASE_DIR, '../data')
+    dataset = os.path.join(DATA_DIR,args.dataset)
+    train_midi_paths, valid_midi_paths = load_dataset(dataset)
+
+    
+    chunks_bar_num = args.chunks_bar_num
+    overlap = args.overlap
+    train_data = overlap_chunk_midi(train_midi_paths, chunk_bar_num=chunks_bar_num, overlap=overlap)
+    valid_data = overlap_chunk_midi(valid_midi_paths, chunks_bar_num, overlap=overlap)
+    
+    
+    print("Size of train dataset: ", len(train_data))
+    print("Size of Validation dataset: ", len(valid_data))
     print(train_data[:3])
     print(valid_data[:3])
 
-    print("Size of train dataset: ", len(train_data))
-    print("Size of Validation dataset: ", len(valid_data))
-
     dataset_train = CodeplayDataset(
-        files_paths=train_data,
+        midis=train_data,
         min_seq_len=50,
+        # max_seq_len=1022,
         max_seq_len=args.context_length - 2,
         tokenizer=tokenizer,
     )
     dataset_valid = CodeplayDataset(
-        files_paths=valid_data,
+        midis=valid_data,
         min_seq_len=50,
+        # max_seq_len=1022,
         max_seq_len=args.context_length - 2,
         tokenizer=tokenizer,
     )
@@ -226,7 +242,7 @@ def fsdp_main(args):
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     best_val_loss = float("inf")
     curr_val_loss = float("inf")
-    file_save_name = "GPT-model-"
+    file_save_name = "GPT-model"
 
     if rank == 0:
         time_of_run = get_date_of_run()
@@ -276,17 +292,25 @@ def fsdp_main(args):
                 model, StateDictType.FULL_STATE_DICT, save_policy
             ):
                 cpu_state = model.state_dict()
+                model_to_save = model.module if hasattr(model, 'module') else model
 
             if rank == 0:
                 print(f"--> saving model ...")
                 currEpoch = (
-                    "-" + str(epoch) + "-" + str(round(curr_val_loss.item(), 4)) + ".pt"
+                    "-" + str(epoch) + "-" + str(round(curr_val_loss.item(), 4))
                 )
                 print(f"--> attempting to save model prefix {currEpoch}")
-                save_name = file_save_name + "-" + time_of_run + "-" + currEpoch
-                print(f"--> saving as model name {save_name}")
-
-                torch.save(cpu_state, save_name)
+                save_folder = file_save_name + "-" + time_of_run + "-" + currEpoch
+                
+                OUTPUT_DIR = os.path.join(BASE_DIR, f'../models/{save_folder}')
+                if not os.path.exists(OUTPUT_DIR):
+                    os.makedirs(OUTPUT_DIR)
+                # save_name = "pytorch_model.bin"
+                print(f"--> saving as model name {WEIGHTS_NAME} in {OUTPUT_DIR} ")
+                
+                torch.save(cpu_state, os.path.join(OUTPUT_DIR, WEIGHTS_NAME))     
+                model_to_save.config.to_json_file(os.path.join(OUTPUT_DIR, CONFIG_NAME))
+                tokenizer.save_pretrained(OUTPUT_DIR)
 
         if curr_val_loss < best_val_loss:
 
@@ -305,7 +329,7 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=16, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=2, metavar='N',
+    parser.add_argument('--epochs', type=int, default=1, metavar='N',
                         help='number of epochs to train (default: 3)')
     parser.add_argument('--lr', type=float, default=.002, metavar='LR',
                         help='learning rate (default: .002)')
@@ -321,13 +345,19 @@ if __name__ == '__main__':
                         help='running the validation')
     parser.add_argument('--save-model', action='store_false', default=True,
                         help='For Saving the current Model')
-    parser.add_argument('--master_ip', type=str, default="10.0.1.6")
+    parser.add_argument('--master_ip', type=str)
     parser.add_argument('--world_size', type=int)
     parser.add_argument('--rank', type=int)
     parser.add_argument('--context_length', type=int, default=1024)
     parser.add_argument('--n_layer', type=int, default=8)
     parser.add_argument('--n_head', type=int, default=8)
     parser.add_argument('--n_emb', type=int, default=512)
+    parser.add_argument('--dataset', type=str, default = "kpop-test",
+                        help="Place dataset in the \'dataset folder\'")
+    parser.add_argument('--chunks_bar_num', type=int, default = 4,
+                        help="Place dataset in the \'dataset folder\'")
+    parser.add_argument('--overlap', type=int, default = 2,
+                        help="0(default) means not working")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
