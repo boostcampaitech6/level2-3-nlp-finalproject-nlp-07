@@ -12,8 +12,6 @@ from utils import split_train_valid
 from datetime import datetime
 
 from pathlib import Path
-from symusic import Score
-from tqdm import tqdm
 
 SEED = 2024
 deterministic = False
@@ -28,6 +26,11 @@ if deterministic: # cudnn random seed 고정 - 고정 시 학습 속도가 느�
 	torch.backends.cudnn.deterministic = True
 	torch.backends.cudnn.benchmark = False
 
+args_data = {
+    "Jazz": "../data/full/jazz-midi-clean",
+    "Lakh": "../data/full/lakh_clean_midi",
+}
+
 def main():
     args = {}
     # args["user"] = "devBuzz142"
@@ -38,7 +41,7 @@ def main():
     args["max_seq_len"] = 1024
     args["batch_size"] = 16
     
-    args["tokenizer"] = "NNN-meta"
+    args["tokenizer"] = "NNN-vel4"
     if args["tokenizer"] == "NNN-vel4":
         tokenizer = get_nnn_tokenizer(4)
     elif args["tokenizer"] == "NNN-vel8":
