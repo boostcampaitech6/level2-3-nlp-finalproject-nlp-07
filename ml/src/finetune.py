@@ -4,9 +4,9 @@ import pandas as pd
 import torch
 
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
-from tokenizer import get_custom_tokenizer, get_nnn_tokenizer
+from tokenizer import get_custom_tokenizer, get_nnn_tokenizer, get_nnn_meta_tokenizer
 from miditok.pytorch_data import DataCollator
-from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi
+from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi, meta_chunk_midi
 from trainer import CodeplayTrainer
 from utils import split_train_valid
 from datetime import datetime
@@ -38,15 +38,18 @@ def main():
     args["max_seq_len"] = 1024
     args["batch_size"] = 16
     
-    args["tokenizer"] = "NNN-vel4"
+    args["tokenizer"] = "NNN-meta"
     if args["tokenizer"] == "NNN-vel4":
         tokenizer = get_nnn_tokenizer(4)
     elif args["tokenizer"] == "NNN-vel8":
         tokenizer = get_nnn_tokenizer(8)
     elif args["tokenizer"] == "MMM":
         tokenizer = get_custom_tokenizer()
+    elif args["tokenizer"] == "NNN-meta":
+        tokenizer = get_nnn_meta_tokenizer(4)
     
-    fine_tune_data_path = '../../data/full/lakh_clean_midi'
+    #NOTE - sampled
+    fine_tune_data_path = '../../data/full/lakh_clean_midi_sampled'
     metas = pd.read_csv('../data/full/lakh_clean_midi.csv')
     metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
 
@@ -57,8 +60,8 @@ def main():
     
     args["chunks_bar_num"] = 4
     args["overlap"] = 0
-    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
-    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
+    train_midi_chunks = meta_chunk_midi(train_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
+    valid_midi_chunks = meta_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
     
     # midi chunks to midi tokens
     train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
@@ -66,28 +69,7 @@ def main():
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
-    #TODO -  context length는 자유롭게 바꿔보며 실험해봐도 좋을 듯 합니다.
-    context_length = args["max_seq_len"]
-
-    #TODO: Change this based on size of the data
-    args["model_param"] = "6-6-768"
-    n_layer=int(args["model_param"].split("-")[0])
-    n_head=int(args["model_param"].split("-")[1])
-    n_emb=int(args["model_param"].split("-")[2])
-
-    # gpt2 config
-    args["model_name"] = "gpt2"
-    model_config = AutoConfig.from_pretrained(
-        args["model_name"],
-        vocab_size=len(tokenizer),
-        n_positions=context_length,
-        n_layer=n_layer,
-        n_head=n_head,
-        pad_token_id=tokenizer["PAD_None"],
-        bos_token_id=tokenizer["BOS_None"],
-        eos_token_id=tokenizer["EOS_None"],
-        n_embd=n_emb
-    )
+    model_config = AutoConfig.from_pretrained('../models/nnn-vel4-lakh-checkpoint-56000')
 
     #NOTE - nvidia update 필요합니다!
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -99,11 +81,8 @@ def main():
     
     # Get the output directory with timestamp.
     # output_path with timestamp
-    # datetime.now().strftime("%Y%m%d-%H%M%S")
-    if 'title' in args:
-        output_path = f"../models/{args['title']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    else:
-        output_path = f"../models/{args['data']}-chunk{args['chunks_bar_num']}-ov{args['overlap']}-{args['model_name']}-{args['tokenizer']}/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    # datetime.now().strftime("%Y%m%d-%H%M%S")  
+    output_path = f"../models/fine_tune/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
     steps = 400
     # Commented parameters correspond to the small model

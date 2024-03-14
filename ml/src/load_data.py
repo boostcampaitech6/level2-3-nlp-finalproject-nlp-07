@@ -187,7 +187,7 @@ class CodeplayDataset(_DatasetABC):
             maxinterval=480,
         ):
             label = None
-            midi, cut_idx = midis[i]
+            midi, genre, emotion, tempo = midis[i]
             tokens = tokenizer(midi).tokens
             
             nnn_tokens = []
@@ -203,14 +203,12 @@ class CodeplayDataset(_DatasetABC):
                     i += 1
             tokens_ids = [tokenizer[tk] for tk in nnn_tokens]
                 
-            #TODO - path -> midi 구조 변경으로 인한 수정 필요
-            # Concat genre token
-            # meta_ids = []
-            # if genre_token_ids is not None:
-            #     meta_ids += [genre_token_ids[i]]
-            # if bar4_token_ids is not None:
-            #     meta_ids += [bar4_token_ids[i]]
-            # tokens_ids = meta_ids + tokens_ids
+            # Concat meta tokens
+            meta_ids = []
+            meta_ids.append(tokenizer[f'Genre_{genre}'])
+            meta_ids.append(tokenizer[f'Emotion_{emotion}'])
+            # meta_ids.append(tokenizer[f'Tempo_{tempo}'])
+            tokens_ids = meta_ids + tokens_ids
 
             # Cut tokens in samples of appropriate length
             subseqs = split_seq_in_subsequences(tokens_ids, min_seq_len, max_seq_len)
@@ -318,4 +316,37 @@ def overlap_chunk_midi(midi_paths:list[Path], chunk_bar_num=4, overlap=2):
             
     print(f'Chunked {len(chunks)} chunks')
     print(f'Failed to chunk {err_cnt} midi files')
+    return chunks
+
+def meta_chunk_midi(midi_paths:list, chunk_bar_num=4, overlap=2):
+    print(f'Chunking {len(midi_paths)} midi files')
+    
+    chunks = []
+    err_cnt = 0
+    # [path, genre, emotion, tempo]
+    for path, genre, emotion, tempo in midi_paths:
+        try:
+            midi = Score(path)
+        except Exception as e:
+            err_cnt += 1
+            continue
+        
+        ticks_per_chunk = midi.tpq * 4 * chunk_bar_num
+        ticks_per_overlap = midi.tpq * 4 * overlap
+        nb_chunk = ceil(midi.end() / (ticks_per_chunk - ticks_per_overlap))
+        if nb_chunk < 2:
+            chunks.append([midi, genre, emotion, tempo])
+            continue
+        elif nb_chunk > 60:
+            continue
+        
+        for i in range(0, midi.end(), ticks_per_chunk - ticks_per_overlap):
+            chunk = midi.copy()
+            chunk = chunk.clip(i, i+ticks_per_chunk)
+            chunk = chunk.shift_time(-i)
+            chunks.append([chunk, genre, emotion, tempo])
+        
+    print(f'Chunked {len(chunks)} chunks')
+    print(f'Failed to chunk {err_cnt} midi files')
+    
     return chunks
