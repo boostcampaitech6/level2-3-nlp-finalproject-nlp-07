@@ -52,10 +52,10 @@ GENRE_TOKEN_LIST = ['Genre_Unk'] + ['Genre_'+genre for genre in GENRE_TOKEN_LIST
 GENRE_TOKEN_LIST += ['Genre_'+str(i+1) for i in range(40-len(GENRE_TOKEN_LIST))] #40
 BAR2_TOKEN_LIST = ['Bar2_Unk'] + ['Bar2_'+str(i+1) for i in range(127)] # 128
 
-def get_custom_tokenizer():
+def get_custom_tokenizer(num_velocities):
     TOKENIZER_NAME = CodeplayTokenizer
     config = TokenizerConfig(
-        num_velocities=16,
+        num_velocities=num_velocities,
         use_chord=True,
         use_pitch_intervals=True,
         use_programs=True,)
@@ -81,7 +81,7 @@ def get_custom_tokenizer():
     print(f'Total Tokenizer bandwith : 0 ~ {cut}, ({len(tokenizer)} tokens)')
     return tokenizer
 
-def get_nnn_tokenizer(num_velocities=8):
+def get_nnn_tokenizer(num_velocities=4):
     NNN = CodeplayTokenizer
     config = TokenizerConfig(
         num_velocities=num_velocities,
