@@ -192,6 +192,7 @@ class CodeplayDataset(_DatasetABC):
                 midi, genre, emotion, tempo = midis[i]
             else:
                 midi = midis[i][0]
+            # mmm_tokens
             tokens = tokenizer(midi).tokens
             
             nnn_tokens = []
@@ -293,7 +294,7 @@ def chunk_midi(midi_paths: list[Path], chunk_bar_num=4):
     return chunks
 
 
-def overlap_chunk_midi(midi_paths:list[Path], chunk_bar_num=4, overlap=2):
+def overlap_chunk_midi(midi_paths:list[Path], chunk_bar_num=4, overlap=0):
     chunks = []
     err_cnt = 0
     print(f'Chunking {len(midi_paths)} midi files')
@@ -323,7 +324,7 @@ def overlap_chunk_midi(midi_paths:list[Path], chunk_bar_num=4, overlap=2):
     print(f'Failed to chunk {err_cnt} midi files')
     return chunks
 
-def meta_chunk_midi(midi_paths:list, chunk_bar_num=4, overlap=2):
+def meta_chunk_midi(midi_paths:list, chunk_bar_num=4, overlap=0):
     print(f'Chunking {len(midi_paths)} midi files')
     
     chunks = []

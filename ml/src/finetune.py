@@ -41,7 +41,7 @@ def main():
     args["max_seq_len"] = 1024
     args["batch_size"] = 16
     
-    args["tokenizer"] = "NNN-vel4"
+    args["tokenizer"] = "NNN-meta"
     if args["tokenizer"] == "NNN-vel4":
         tokenizer = get_nnn_tokenizer(4)
     elif args["tokenizer"] == "NNN-vel8":
@@ -53,7 +53,7 @@ def main():
     
     #NOTE - sampled
     fine_tune_data_path = '../data/full/lakh_clean_midi'
-    metas = pd.read_csv('../data/full/lakh_clean_midi/lakh_clean_midi_sampled.csv')
+    metas = pd.read_csv('../data/meta/lakh_clean_midi.csv')
     metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
 
     midi_paths = [[Path(fine_tune_data_path+f'/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(int)"]] for i, row in metas.iterrows() if Path(fine_tune_data_path+f"/{row['file_path']}").exists()]
@@ -67,8 +67,8 @@ def main():
     valid_midi_chunks = meta_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
     
     # midi chunks to midi tokens
-    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
-    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
+    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer, use_meta=True)
+    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer, use_meta=True)
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
@@ -80,14 +80,14 @@ def main():
     
     model = GPT2LMHeadModel(model_config)
     model.to(device)
-    
+    model.resize_token_embeddings(len(tokenizer))
     
     # Get the output directory with timestamp.
     # output_path with timestamp
     # datetime.now().strftime("%Y%m%d-%H%M%S")  
-    output_path = f"../models/fine_tune/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    output_path = f"../models/fine_tune/lakh-genre-full-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
         
-    steps = 200
+    steps = 400
     # Commented parameters correspond to the small model
     trainer_config = {
         "output_dir": output_path,
@@ -112,6 +112,7 @@ def main():
     }
     
     train_args = TrainingArguments(**trainer_config)
+
 
     #TODO - DataCollator customize
     trainer = CodeplayTrainer(
