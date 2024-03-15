@@ -35,7 +35,9 @@ from utils import load_dataset
 from pytorch_transformers import WEIGHTS_NAME, CONFIG_NAME
 from load_data import CodeplayDataset, overlap_chunk_midi
 from miditok.pytorch_data import DataCollator
-
+import wandb
+import shutil
+    
 # 2. Distributed training setup
 def setup(args):
     # initialize the process group
@@ -62,8 +64,11 @@ class MidiModel(GPT2LMHeadModel):
         )
         super().__init__(config)
 
-def setup_tokenizer():
-    tokenizer = get_nnn_tokenizer()
+def setup_tokenizer(num_velocities, tokenizer_args):
+    if tokenizer_args == "mmm" :
+        tokenizer = get_custom_tokenizer(num_velocities)
+    elif tokenizer_args == "nnn" : 
+        tokenizer = get_nnn_tokenizer(num_velocities)
     return tokenizer
 
 def get_date_of_run():
@@ -144,9 +149,22 @@ def validation(model, rank, world_size, val_loader):
         print(f"Validation Loss: {val_loss:.4f}")
     return val_loss
 
+def delete_old_models(models_dir, max_folder_to_keep=5):
+    # models 내의 모든 폴더
+    all_folders = [os.path.join(models_dir, folder) for folder in os.listdir(models_dir) if os.path.isdir(os.path.join(models_dir, folder))]
+    # 폴더 날짜 별 정렬
+    sorted_folders = sorted(all_folders, key=lambda x: os.path.getmtime(x))
+    
+    if len(sorted_folders) >= max_folder_to_keep :
+        # 오래된 폴더 삭제(=models 중 loss 큰 폴더 삭제)
+        folders_to_delete = sorted_folders[:-(max_folder_to_keep-len(sorted_folders))]
+        for folder in folders_to_delete:
+            print(f"Deleting folder: {folder}")
+            shutil.rmtree(folder)
 
 # 6.  Define a distributed train function that wraps the model in FSDP
 def fsdp_main(args):
+    wandb.init(project="fsdp_train", config=args)
     setup(args)
     """
     custom model class 
@@ -156,7 +174,7 @@ def fsdp_main(args):
     n_head=args.n_head
     n_emb=args.n_emb
     
-    tokenizer = setup_tokenizer()
+    tokenizer = setup_tokenizer(args.num_velocities, args.tokenizer)
     model = MidiModel(tokenizer, context_length, n_layer, n_head, n_emb)
     total_params = sum(p.numel() for p in model.parameters())
     print(f"Parameters count: {total_params}")
@@ -255,6 +273,9 @@ def fsdp_main(args):
         mem_alloc_tracker = []
         mem_reserved_tracker = []
 
+    early_stopping_counter = 0
+    patience = args.patience
+    
     for epoch in range(1, args.epochs + 1):
         t0 = time.time()
         train_accuracy = train(args, model, rank, world_size, train_loader, optimizer, epoch, sampler=sampler1)
@@ -263,6 +284,10 @@ def fsdp_main(args):
         scheduler.step()
 
         if rank == 0:
+            wandb.log({'train_loss': train_accuracy.item()})        # train_loss logging
+            wandb.log({'validation_loss': curr_val_loss.item()})    # valid_loss logging
+            curr_lr = optimizer.param_groups[0]['lr']
+            wandb.log({'learning_rate': curr_lr})                   # learning rate logging
 
             print(f"--> epoch {epoch} completed...entering save and stats zone")
 
@@ -308,18 +333,30 @@ def fsdp_main(args):
                 # save_name = "pytorch_model.bin"
                 print(f"--> saving as model name {WEIGHTS_NAME} in {OUTPUT_DIR} ")
                 
+                max_folder_to_keep=5
+                delete_old_models(os.path.join(BASE_DIR, '../models'), max_folder_to_keep)
                 torch.save(cpu_state, os.path.join(OUTPUT_DIR, WEIGHTS_NAME))     
                 model_to_save.config.to_json_file(os.path.join(OUTPUT_DIR, CONFIG_NAME))
                 tokenizer.save_pretrained(OUTPUT_DIR)
 
         if curr_val_loss < best_val_loss:
-
+            if args.earlystopping : 
+                early_stopping_counter = 0
             best_val_loss = curr_val_loss
             if rank==0:
                 print(f"-->>>> New Val Loss Record: {best_val_loss}")
+        else :
+            if args.earlystopping : 
+                early_stopping_counter += 1 
+                print(f"EarlyStopping Counter: {early_stopping_counter} out of {patience}")
+                if early_stopping_counter >= patience:
+                    print(f"Validation loss hasn't improved for {patience} epochs. Early stopping...")
+                    break  # Break out of the training loop
 
     dist.barrier()
     cleanup()
+    
+    wandb.finish()
     
 # 7. Parse the arguments and set the main function
 if __name__ == '__main__':
@@ -354,10 +391,13 @@ if __name__ == '__main__':
     parser.add_argument('--n_emb', type=int, default=512)
     parser.add_argument('--dataset', type=str, default = "kpop-test",
                         help="Place dataset in the \'dataset folder\'")
-    parser.add_argument('--chunks_bar_num', type=int, default = 4,
-                        help="Place dataset in the \'dataset folder\'")
-    parser.add_argument('--overlap', type=int, default = 2,
+    parser.add_argument('--chunks_bar_num', type=int, default = 4)
+    parser.add_argument('--overlap', type=int, default = 0,
                         help="0(default) means not working")
+    parser.add_argument('--num_velocities', type=int, default = 4)
+    parser.add_argument('--earlystopping', default = True)
+    parser.add_argument('--patience', type=int, default = 3)
+    parser.add_argument('--tokenizer', type=str, default="nnn")
     args = parser.parse_args()
 
     torch.manual_seed(args.seed)
