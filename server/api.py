@@ -10,9 +10,8 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 from utils.utils import clear_huggingface_cache
-from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_additional_track
+from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
 from utils.frontModel_util import initialize_front_model, extract_condition
-from utils.tokenizer_converter import mmm_to_nnn, nnn_to_mmm
 from settings import TEMP_DIR
 
 # 캐쉬 삭제
@@ -77,13 +76,8 @@ async def receive_midi(midi_file: UploadFile = File(...), instnum: int = Form(..
     except Exception as e:
         return {"status": "failed", "message": str(e)}
     
-    mmm_tokens_ids = generate_tokenizer(midi).ids
-    nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, generate_tokenizer)
-    nnn_tokens_ids = torch.tensor([nnn_tokens_ids])
-    
-    generated_ids = generate_additional_track(nnn_tokens_ids, generate_model, generate_tokenizer, temperature=0.8)
-    mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), generate_tokenizer)
-    midi_data = generate_tokenizer.tokens_to_midi(mmm_generated_ids)
+    # update midi
+    midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
 
     file_path = os.path.join(TEMP_DIR, "temp_additional.mid")
     midi_data.dump_midi(file_path)

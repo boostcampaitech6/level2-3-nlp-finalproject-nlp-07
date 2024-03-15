@@ -6,6 +6,8 @@ from settings import MODEL_DIR, GENERATE_MODEL_NAME
 from utils.data_processing import get_instruments_for_generate_model
 from utils.tokenizer_converter import mmm_to_nnn, nnn_to_mmm
 from tokenizer_svr import get_nnn_tokenizer
+import logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 BOS_TOKEN = "BOS_None"
 EOS_TOKEN = "Track_End"
@@ -49,5 +51,22 @@ def generate_initial_track(model, tokenizer, condition, track_num=5, temperature
     
     mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
     midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
+
+    return midi_data
+
+def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
+    if track_num == 999:
+        updated_text = "Track_Start"
+    else:
+        updated_text = f"Track_Start Program_{track_num}"
+        
+    token_list = [tokenizer[token] for token in updated_text.split()]
+    mmm_tokens_ids = tokenizer(midi).ids + token_list
+    nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
+    nnn_tokens_ids = torch.tensor([nnn_tokens_ids]).to(DEVICE)
+    
+    generated_ids = generate_additional_track(nnn_tokens_ids, model, tokenizer, temperature)
+    mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
+    midi_data = tokenizer.tokens_to_midi(mmm_generated_ids)
 
     return midi_data
