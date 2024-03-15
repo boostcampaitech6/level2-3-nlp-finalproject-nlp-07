@@ -3,15 +3,19 @@ from transformers import GPT2LMHeadModel
 from miditok import MMM, TokenizerConfig
 import os
 from settings import MODEL_DIR, GENERATE_MODEL_NAME
+from utils.data_processing import get_instruments_for_generate_model
+from tokenizer_svr import get_nnn_tokenizer
 
 BOS_TOKEN = "BOS_None"
 EOS_TOKEN = "Track_End"
 
 def initialize_generate_model():
     model_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME)
-    tokenizer_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME+'/tokenizer.json')
     model = GPT2LMHeadModel.from_pretrained(model_path)
-    tokenizer = MMM(TokenizerConfig(), tokenizer_path)
+
+    # tokenizer_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME+'/tokenizer.json')
+    # tokenizer = MMM(TokenizerConfig(), tokenizer_path)
+    tokenizer = get_nnn_tokenizer(4)
     return model, tokenizer
 
 def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
@@ -25,7 +29,18 @@ def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
     ).cpu()
     return generated_ids
 
-def generate_initial_track(model, tokenizer, temperature=0.8):
-    initial_token_id = tokenizer[BOS_TOKEN]
-    input_ids = torch.tensor([[initial_token_id]])
-    return generate_additional_track(input_ids, model, tokenizer, temperature)
+def generate_initial_track(model, tokenizer, condition, track_num=5, temperature=0.8):
+    genre_instruments = get_instruments_for_generate_model(condition)[:track_num]
+    for i, instruments in enumerate(genre_instruments):
+        if i == 0:
+            input_text = "BOS_None Track_Start " + instruments
+            generated_ids = torch.empty(1, 0)
+        else:
+            input_text = "Track_Start " + instruments
+
+        token_list = [tokenizer[token] for token in input_text.split()]
+        input_ids = torch.cat((generated_ids, torch.tensor([token_list])), dim=1).to(torch.int64)
+
+        generated_ids = generate_additional_track(input_ids, model, tokenizer, temperature)
+
+    return generated_ids
