@@ -29,7 +29,7 @@ front_model, front_tokenizer = initialize_front_model()
 generate_model, generate_tokenizer = initialize_generate_model()
 
 @router.post("/generate_midi/")
-async def generate_midi(req: TextData):
+async def generate_midi(req: Request, text_data: TextData):
     """
     client fetch format
     fetch(
@@ -46,7 +46,10 @@ async def generate_midi(req: TextData):
       }
     )
     """
-    text = req.prompt
+    client_ip = req.client.host
+    logging.info(f"client_ip : {client_ip}")
+    
+    text = text_data.prompt
     logging.info(f"input_text : {text}")
 
     # front model - condition 추출
@@ -63,7 +66,9 @@ async def generate_midi(req: TextData):
     return StreamingResponse(open(file_path, "rb"), media_type="audio/midi")
 
 @router.post("/upload_midi/")
-async def receive_midi(midi_file: UploadFile = File(...), instnum: int = Form(...)):
+async def receive_midi(req: Request, midi_file: UploadFile = File(...), instnum: int = Form(...)):
+    client_ip = req.client.host
+    logging.info(f"client_ip : {client_ip}")
     logging.info(f"midi_file : {midi_file}")
     logging.info(f"instnum : {instnum}")
 
