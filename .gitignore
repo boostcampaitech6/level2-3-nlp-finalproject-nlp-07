@@ -29,3 +29,6 @@ test/
 ```
 ### 3.2.2. .gitignore for Python
 ```gitignore
+
+# Ingore wandb logs
+wandb/
