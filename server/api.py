@@ -57,7 +57,7 @@ async def generate_midi(req: Request, text_data: TextData):
     logging.info("emotion : %s,  tempo : %s,  genre : %s", *condition)
     
     ## generate model - midi track 생성
-    midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, track_num=5, temperature=0.8)
+    midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, top_tracks=5, temperature=0.8)
 
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)

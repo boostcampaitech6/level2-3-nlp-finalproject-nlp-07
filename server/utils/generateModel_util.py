@@ -34,8 +34,8 @@ def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
     # ).cpu()
     return generated_ids
 
-def generate_initial_track(model, tokenizer, condition, track_num=5, temperature=0.8):
-    genre_instruments = get_instruments_for_generate_model(condition)[:track_num]
+def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperature=0.8):
+    genre_instruments = get_instruments_for_generate_model(condition)[:top_tracks]
     for i, instruments in enumerate(genre_instruments):
         if i == 0:
             input_text = "BOS_None Track_Start " + instruments
@@ -59,7 +59,7 @@ def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
         updated_text = "Track_Start"
     else:
         updated_text = f"Track_Start Program_{track_num}"
-        
+
     token_list = [tokenizer[token] for token in updated_text.split()]
     mmm_tokens_ids = tokenizer(midi).ids + token_list
     nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
