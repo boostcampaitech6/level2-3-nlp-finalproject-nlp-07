@@ -5,9 +5,9 @@ import torch
 import os
 
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
-from tokenizer import get_custom_tokenizer, get_nnn_tokenizer
+from tokenizer import get_custom_tokenizer, get_nnn_tokenizer, get_nnn_meta_tokenizer
 from miditok.pytorch_data import DataCollator
-from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi
+from load_data import load_midi_paths, CodeplayDataset, chunk_midi
 from trainer import CodeplayTrainer
 from utils import split_train_valid
 from arguments import set_arguments
@@ -37,6 +37,9 @@ def main(args):
         tokenizer = get_nnn_tokenizer(8)
     elif args.tokenizer == "MMM":
         tokenizer = get_custom_tokenizer()
+    elif args.tokenizer == "NNN-meta":
+        tokenizer = get_nnn_meta_tokenizer(4)
+        args.use_meta = True
     else:
         raise ValueError("Invalid tokenizer: ", args.tokenizer)
     
@@ -55,12 +58,12 @@ def main(args):
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
     # midi to midi chunks
-    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap)
-    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap)
+    train_midi_chunks = chunk_midi(train_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap, use_meta=args.use_meta)
+    valid_midi_chunks = chunk_midi(valid_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap, use_meta=args.use_meta)
     
     # midi chunks to midi tokens
-    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer)
-    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer)
+    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer, use_meta=args.use_meta)
+    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer, use_meta=args.use_meta)
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
@@ -140,6 +143,6 @@ if __name__ == '__main__':
     print('model: ', args.model, ', tokenizer: ', args.tokenizer, ', dataset: ', args.dataset)
     print('batch_size: ', args.batch_size, ', max_seq_len: ', args.max_seq_len)
     print('chunk_bar_num: ', args.chunk_bar_num, ', overlap: ', args.overlap)
-    print('====================')
-    
+    print('====================')    
+
     main(args)
