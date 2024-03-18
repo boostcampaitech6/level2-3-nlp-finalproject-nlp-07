@@ -55,17 +55,18 @@ def main(args):
     
     # load midi paths
     if args.use_meta:
-        metas = pd.read_csv(DATA_DIR + datasets[args.dataset] + "/meta/metas.csv")
-        metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
+        metas = pd.read_csv(DATA_DIR + datasets[args.dataset] + f"/meta/{args.meta_file_name}.csv")
+        metas = metas[['emotion', 'tempo(category)', 'genre', 'file_path']]
         midi_paths = [
-            [Path(DATA_DIR+f'/{datasets[args.dataset]}/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(int)"]]
+            [Path(DATA_DIR+f'{datasets[args.dataset]}/midi/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(category)"]]
             for _, row in metas.iterrows()
-            if Path(DATA_DIR + datasets[args.dataset] + f'/{row["file_path"]}').exists()
+            if Path(DATA_DIR + datasets[args.dataset] + f'/midi/{row["file_path"]}').exists()
         ]
     else:
         midi_paths = DATA_DIR + datasets[args.dataset]
         midi_paths = load_midi_paths(midi_paths)
-        
+    
+    print(midi_paths[0][0])
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=args.seed)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
