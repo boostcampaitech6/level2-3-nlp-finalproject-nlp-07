@@ -26,7 +26,7 @@ def set_random_seed(seed=2024, deterministic=False):
 
 #NOTE - 데이터셋을 추가해주세요
 datasets = {
-    "lakh-clean": "/lakh-clean",
+    "lakh": "/lakh-clean",
     "jazz": "/jazz-clean",
 }
 
