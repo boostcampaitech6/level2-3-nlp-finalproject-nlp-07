@@ -191,7 +191,7 @@ class CodeplayDataset(_DatasetABC):
             if use_meta:
                 midi, genre, emotion, tempo = midis[i]
             else:
-                midi = midis[i][0]
+                midi = midis[i]
             # mmm_tokens
             tokens = tokenizer(midi).tokens
             

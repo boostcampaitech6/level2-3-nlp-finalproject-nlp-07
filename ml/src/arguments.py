@@ -28,6 +28,8 @@ def default_arguments(args_name='default'):
                         help='chunk bar number (default: 4)')
     parser.add_argument('--overlap', type=int, default=0,
                         help='overlap (default: 0)')
+    parser.add_argument('--use_meta', type=bool, default=False,
+                        help='use meta (default: False)')
     
     # model params
     parser.add_argument('--model', type=str, default='gpt2',

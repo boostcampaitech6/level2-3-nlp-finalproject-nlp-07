@@ -1,8 +1,10 @@
 import random
 from datetime import datetime
 import numpy as np
+import pandas as pd
 import torch
 import os
+from pathlib import Path
 
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
 from tokenizer import get_custom_tokenizer, get_nnn_tokenizer, get_nnn_meta_tokenizer
@@ -48,11 +50,21 @@ def main(args):
         raise ValueError("Invalid dataset: ", args.dataset)
     BASE_DIR = os.getcwd()
     DATA_DIR = os.path.join(BASE_DIR, "../data")
-    midi_paths = DATA_DIR + datasets[args.dataset]
-    print(midi_paths)
+    print('dataset dir: ', DATA_DIR + datasets[args.dataset])
     
     # load midi paths
-    midi_paths = load_midi_paths(midi_paths)
+    if args.use_meta:
+        metas = pd.read_csv(DATA_DIR + datasets[args.dataset] + "/meta/metas.csv")
+        metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
+        midi_paths = [
+            [Path(DATA_DIR+f'/{datasets[args.dataset]}/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(int)"]]
+            for _, row in metas.iterrows()
+            if Path(DATA_DIR + datasets[args.dataset] + f'/{row["file_path"]}').exists()
+        ]
+    else:
+        midi_paths = DATA_DIR + datasets[args.dataset]
+        midi_paths = load_midi_paths(midi_paths)
+        
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=args.seed)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
