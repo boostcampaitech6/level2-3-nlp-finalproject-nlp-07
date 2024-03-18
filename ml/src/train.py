@@ -24,9 +24,10 @@ def set_random_seed(seed=2024, deterministic=False):
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
+#NOTE - 데이터셋을 추가해주세요
 datasets = {
-    "lakh-clean": "/lakh_clean_midi",
-    "jazz": "/jazz-midi-clean",
+    "lakh-clean": "/lakh-clean",
+    "jazz": "/jazz-clean",
 }
 
 def main(args):
