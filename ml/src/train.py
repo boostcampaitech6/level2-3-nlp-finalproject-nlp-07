@@ -1,91 +1,99 @@
 import random
+from datetime import datetime
 import numpy as np
+import pandas as pd
 import torch
+import os
+from pathlib import Path
 
 from transformers import AutoConfig, GPT2LMHeadModel, set_seed, EarlyStoppingCallback, TrainingArguments
-from tokenizer import get_custom_tokenizer, get_nnn_tokenizer
+from tokenizer import get_custom_tokenizer, get_nnn_tokenizer, get_nnn_meta_tokenizer
 from miditok.pytorch_data import DataCollator
-from load_data import load_midi_paths, CodeplayDataset, chunk_midi, overlap_chunk_midi
+from load_data import load_midi_paths, CodeplayDataset, chunk_midi
 from trainer import CodeplayTrainer
 from utils import split_train_valid
-from datetime import datetime
+from arguments import set_arguments
 
-SEED = 2024
-deterministic = False
+def set_random_seed(seed=2024, deterministic=False):
+    random.seed(seed) # python random seed 고정
+    np.random.seed(seed) # numpy random seed 고정
+    torch.manual_seed(seed) # torch random seed 고정
+    torch.cuda.manual_seed_all(seed) # torch random seed 고정
+    set_seed(seed) # transformers random seed 고정
+    if deterministic: # cudnn random seed 고정 - 고정 시 학습 속도가 느려질 수 있습니다. 
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
 
-#REVIEW - seed 고정할 것 더 있나요?
-random.seed(SEED) # python random seed 고정
-np.random.seed(SEED) # numpy random seed 고정
-torch.manual_seed(SEED) # torch random seed 고정
-torch.cuda.manual_seed_all(SEED) # torch random seed 고정
-set_seed(SEED) # transformers random seed 고정
-if deterministic: # cudnn random seed 고정 - 고정 시 학습 속도가 느려질 수 있습니다. 
-	torch.backends.cudnn.deterministic = True
-	torch.backends.cudnn.benchmark = False
-
-args_data = {
-    "Jazz": "../data/full/jazz-midi-clean",
-    "Lakh": "../data/full/lakh_clean_midi",
+#NOTE - 데이터셋을 추가해주세요
+datasets = {
+    "lakh": "/lakh-clean",
+    "jazz": "/jazz-clean",
 }
 
-def main():
-    args = {}
-    # args["user"] = "devBuzz142"
-    # args["title"] = "lakh-NNN"
+def main(args):
+    set_random_seed(args.seed, args.deterministic)
     
-    # MAX_SEQ_LEN, BATCH_SIZE = 2048, 8 # 8마디 용
-    # MAX_SEQ_LEN, BATCH_SIZE = 1024, 16
-    args["max_seq_len"] = 1024
-    args["batch_size"] = 16
-    
-    args["tokenizer"] = "NNN-vel4"
-    if args["tokenizer"] == "NNN-vel4":
+    # set tokenizer
+    if args.tokenizer == "NNN-vel4":
         tokenizer = get_nnn_tokenizer(4)
-    elif args["tokenizer"] == "NNN-vel8":
+    elif args.tokenizer == "NNN-vel8":
         tokenizer = get_nnn_tokenizer(8)
-    elif args["tokenizer"] == "MMM":
+    elif args.tokenizer == "MMM":
         tokenizer = get_custom_tokenizer()
+    elif args.tokenizer == "NNN-meta":
+        tokenizer = get_nnn_meta_tokenizer(4)
+        args.use_meta = True
+    else:
+        raise ValueError("Invalid tokenizer: ", args.tokenizer)
     
-    args["data"] = "Lakh"
-    midi_paths = args_data[args["data"]]
-    print(midi_paths)
-    midi_paths = load_midi_paths(midi_paths)
+    # set data path
+    if args.dataset not in datasets:
+        raise ValueError("Invalid dataset: ", args.dataset)
+    BASE_DIR = os.getcwd()
+    DATA_DIR = os.path.join(BASE_DIR, "../data")
+    print('dataset dir: ', DATA_DIR + datasets[args.dataset])
+    
+    # load midi paths
+    if args.use_meta:
+        metas = pd.read_csv(DATA_DIR + datasets[args.dataset] + "/meta/metas.csv")
+        metas = metas[['emotion', 'tempo(int)', 'genre', 'file_path']]
+        midi_paths = [
+            [Path(DATA_DIR+f'/{datasets[args.dataset]}/{row["file_path"]}'), row["genre"], row["emotion"], row["tempo(int)"]]
+            for _, row in metas.iterrows()
+            if Path(DATA_DIR + datasets[args.dataset] + f'/{row["file_path"]}').exists()
+        ]
+    else:
+        midi_paths = DATA_DIR + datasets[args.dataset]
+        midi_paths = load_midi_paths(midi_paths)
+        
     print('num of midi files:', len(midi_paths))
-    train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=SEED)
+    train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=args.seed)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
     
-    args["chunks_bar_num"] = 4
-    args["overlap"] = 0
-    train_midi_chunks = overlap_chunk_midi(train_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
-    valid_midi_chunks = overlap_chunk_midi(valid_midi_paths, chunk_bar_num=args["chunks_bar_num"], overlap=args["overlap"])
+    # midi to midi chunks
+    train_midi_chunks = chunk_midi(train_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap, use_meta=args.use_meta)
+    valid_midi_chunks = chunk_midi(valid_midi_paths, chunk_bar_num=args.chunk_bar_num, overlap=args.overlap, use_meta=args.use_meta)
     
     # midi chunks to midi tokens
-    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
-    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args["max_seq_len"]-2, tokenizer=tokenizer)
+    train_dataset = CodeplayDataset(midis=train_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer, use_meta=args.use_meta)
+    valid_dataset = CodeplayDataset(midis=valid_midi_chunks, min_seq_len=50, max_seq_len=args.max_seq_len-2, tokenizer=tokenizer, use_meta=args.use_meta)
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
     #TODO -  context length는 자유롭게 바꿔보며 실험해봐도 좋을 듯 합니다.
-    context_length = args["max_seq_len"]
-
-    #TODO: Change this based on size of the data
-    args["model_param"] = "6-6-768"
-    n_layer=int(args["model_param"].split("-")[0])
-    n_head=int(args["model_param"].split("-")[1])
-    n_emb=int(args["model_param"].split("-")[2])
+    context_length = args.max_seq_len
 
     # gpt2 config
-    args["model_name"] = "gpt2"
     model_config = AutoConfig.from_pretrained(
-        args["model_name"],
+        args.model,
         vocab_size=len(tokenizer),
         n_positions=context_length,
-        n_layer=n_layer,
-        n_head=n_head,
+        n_layer=args.n_layer,
+        n_head=args.n_head,
         pad_token_id=tokenizer["PAD_None"],
         bos_token_id=tokenizer["BOS_None"],
         eos_token_id=tokenizer["EOS_None"],
-        n_embd=n_emb
+        n_embd=args.n_emb
     )
 
     #NOTE - nvidia update 필요합니다!
@@ -97,32 +105,27 @@ def main():
     
     
     # Get the output directory with timestamp.
-    # output_path with timestamp
-    # datetime.now().strftime("%Y%m%d-%H%M%S")
-    if 'title' in args:
-        output_path = f"../models/{args['title']}-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    else:
-        output_path = f"../models/{args['data']}-chunk{args['chunks_bar_num']}-ov{args['overlap']}-{args['model_name']}-{args['tokenizer']}/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    OUTPUT_DIR = os.path.join(BASE_DIR, "../output")
+    save_path = OUTPUT_DIR + f"/{args.model}-{args.tokenizer}-{args.dataset}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
-    steps = 400
     # Commented parameters correspond to the small model
     trainer_config = {
-        "output_dir": output_path,
+        "output_dir": save_path,
         "num_train_epochs": 40, # 학습 epoch 자유롭게 변경. 저는 30 epoch 걸어놓고 early stopping 했습니다.
-        "per_device_train_batch_size": args["batch_size"],
-        "per_device_eval_batch_size": args["batch_size"],
+        "per_device_train_batch_size": args.batch_size,
+        "per_device_eval_batch_size": args.batch_size,
         "evaluation_strategy": "steps",
         "save_strategy": "steps",
-        "eval_steps": steps,
-        "logging_steps":steps,
+        "eval_steps": args.steps,
+        "logging_steps":args.steps,
         "logging_first_step": True,
         "save_total_limit": 5,
-        "save_steps": steps,
+        "save_steps": args.steps,
         "lr_scheduler_type": "cosine",
         "learning_rate":5e-4,
         "warmup_ratio": 0.01,
         "weight_decay": 0.01,
-        "seed": SEED,
+        "seed": args.seed,
         "load_best_model_at_end": True,
         # "metric_for_best_model": "eval_loss" # best model 기준 바꾸고 싶을 경우 이 부분 변경 (default가 eval_loss임)
         #   "report_to": "wandb"
@@ -144,5 +147,15 @@ def main():
     trainer.train()    
 
 if __name__ == '__main__':
-    print('Training model...')
-    main()
+    print('===== Training model... =====')
+    
+    parser = set_arguments('default')
+    args = parser.parse_args()
+    
+    print('==== arguments ====')
+    print('model: ', args.model, ', tokenizer: ', args.tokenizer, ', dataset: ', args.dataset)
+    print('batch_size: ', args.batch_size, ', max_seq_len: ', args.max_seq_len)
+    print('chunk_bar_num: ', args.chunk_bar_num, ', overlap: ', args.overlap)
+    print('====================')    
+
+    main(args)
