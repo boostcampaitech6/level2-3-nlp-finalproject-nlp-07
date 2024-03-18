@@ -105,3 +105,41 @@ def get_nnn_tokenizer(num_velocities=8):
     print(f'NNN Tokenizer bandwith : {prev_len} ~ {len(tokenizer)}, ({len(tokenizer)-prev_len} tokens)')
     return tokenizer
     
+lakh_genres = ['Rock', 'Pop', 'Dance/Electronic', 'Jazz', 'R&B', 'Groove', 'Folk', 'Classical', 'World', 'Metal', "Children"]
+lakh_emotions = ['nostalgia', 'excitement', 'love', 'anger', 'happiness', 'sadness','calmness', 'gratitude', 'loneliness', 'anticipation']
+def get_nnn_meta_tokenizer(num_velocities=4):
+    NNN = CodeplayTokenizer
+    config = TokenizerConfig(
+        num_velocities=num_velocities,
+        use_programs=True
+    )
+    tokenizer = NNN(config)
+    mmm_len = len(tokenizer)
+    vocabs = list(tokenizer.vocab.keys())
+    
+    pitches = [v for v in vocabs if v.startswith('Pitch_') ]
+    velocities = [v for v in vocabs if v.startswith('Velocity_') ]
+    durations = [v for v in vocabs if v.startswith('Duration_') ]
+    
+    for p in pitches:
+        for v in velocities:
+            for d in durations:
+                new_tk = f'{p}+{v}+{d}'
+                tokenizer.add_to_vocab(new_tk)
+    nnn_len = len(tokenizer)
+    
+    # genre tokens
+    for genre in lakh_genres:
+        tokenizer.add_to_vocab(f'Genre_{genre}')
+    genre_len = len(tokenizer)
+    
+    # emotion tokens
+    for emotion in lakh_emotions:
+        tokenizer.add_to_vocab(f'Emotion_{emotion}')
+    emotion_len = len(tokenizer)
+    
+    print(f'MMM Tokenizer bandwith : 0 ~ {mmm_len}, ({mmm_len} tokens)')
+    print(f'NNN Tokenizer bandwith : {mmm_len} ~ {nnn_len}, ({nnn_len-mmm_len} tokens)')
+    print(f'Genre Tokenizer bandwith : {nnn_len} ~ {genre_len}, ({genre_len-nnn_len} tokens)')
+    print(f'Emotion Tokenizer bandwith : {genre_len} ~ {emotion_len}, ({emotion_len-genre_len} tokens)')
+    return tokenizer

@@ -1,6 +1,6 @@
 {
     "MODEL_DIR": "./model/",
-    "GENERATE_MODEL_NAME": "nnn-vel4-lakh-checkpoint-56000",
+    "GENERATE_MODEL_NAME": "fine-meta-full-checkpoint-39200",
     "FRONT_MODEL_NAME": "SangGank/my-front-model",
     "PICKLE_PATH": "labels.pkl",
     "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",
