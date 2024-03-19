@@ -184,17 +184,15 @@ class customRobertaForSequenceClassification(BertPreTrainedModel):
         
 def id2labelData_labels(label_data_path ='./labels.pkl'):
     with open(label_data_path,'rb') as f:
-        emotion_labels=pickle.load(f)
-        tempo_labels=pickle.load(f)
-        genre_labels=pickle.load(f)
-    id2label_emotion = {k:l for k, l in enumerate(emotion_labels)}
-    id2label_tempo = {k:l for k, l in enumerate(tempo_labels)}
-    id2label_genre = {k:l for k, l in enumerate(genre_labels)}
+        labels_data=pickle.load(f)
+    id2label_emotion = {k:l for k, l in enumerate(labels_data["emotion_labels"])}
+    id2label_tempo = {k:l for k, l in enumerate(labels_data["tempo_labels"])}
+    id2label_genre = {k:l for k, l in enumerate(labels_data["genre_labels"])}
     return id2label_emotion, id2label_tempo, id2label_genre
     
 def initialize_front_model():
-    # model = customRobertaForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
-    model = customBertForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
+    model = customRobertaForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
+    # model = customBertForSequenceClassification.from_pretrained(FRONT_MODEL_NAME)
     tokenizer = AutoTokenizer.from_pretrained(FRONT_MODEL_NAME)
     return model, tokenizer
 
