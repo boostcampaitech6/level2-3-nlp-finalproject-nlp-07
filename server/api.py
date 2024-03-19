@@ -6,6 +6,7 @@ from base64 import b64encode, b64decode
 import json
 
 from symusic import Score
+import googletrans
 import os, shutil
 import logging
 # 로깅 설정
@@ -22,15 +23,10 @@ clear_huggingface_cache(False)
 class TextData(BaseModel):
     prompt: str
 
-class Base64Request(BaseModel):
-    base64_file: str
-
-class Base64Response(BaseModel):
-    response_code: str
-    base64_file: str
-
 class UploadData(BaseModel):
     request_json: str
+
+translator = googletrans.Translator()
 
 router = APIRouter()
 
@@ -63,6 +59,10 @@ async def generate_midi(req: Request, text_data: TextData):
     
     text = text_data.prompt
     logging.info(f"input_text : {text}")
+
+    if text != "":
+        text = translator.translate(text, dest='en').text
+        logging.info(f"translate_text : {text}")
 
     # front model - condition 추출
     condition = extract_condition(text, front_model, front_tokenizer)
