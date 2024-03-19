@@ -2,6 +2,8 @@ import torch
 from fastapi import APIRouter, Form, File, UploadFile, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
+from base64 import b64encode, b64decode
+import json
 
 from symusic import Score
 import os, shutil
@@ -19,6 +21,16 @@ clear_huggingface_cache(False)
 
 class TextData(BaseModel):
     prompt: str
+
+class Base64Request(BaseModel):
+    base64_file: str
+
+class Base64Response(BaseModel):
+    response_code: str
+    base64_file: str
+
+class UploadData(BaseModel):
+    request_json: str
 
 router = APIRouter()
 
@@ -56,35 +68,69 @@ async def generate_midi(req: Request, text_data: TextData):
     condition = extract_condition(text, front_model, front_tokenizer)
     logging.info("emotion : %s,  tempo : %s,  genre : %s", *condition)
     
-    ## generate model - midi track 생성
+    # generate model - midi track 생성
     midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, top_tracks=5, temperature=0.8)
 
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)
+    logging.info(f"생성완료 : {file_path}")
 
-    return FileResponse(file_path, media_type="audio/midi")
-    # return StreamingResponse(open(file_path, "rb"), media_type="audio/midi")
+    with open(file_path, 'rb') as file:
+        file_content = b64encode(file.read())
+      
+    return file_content
 
 @router.post("/upload_midi/")
-async def receive_midi(req: Request, midi_file: UploadFile = File(...), instnum: int = Form(...)):
+async def receive_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
-    logging.info(f"client_ip : {client_ip}")
-    logging.info(f"midi_file : {midi_file}")
-    logging.info(f"instnum : {instnum}")
+    logging.info(f"req : {client_ip}")
+
+    parsed_json = json.loads(request_json.request_json)
+    encoded_midi = parsed_json['midi']
+    instnum = parsed_json['instnum']
+    decoded_midi = b64decode(encoded_midi)
 
     temp_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
     try:
         # 업로드된 파일을 임시 폴더에 저장
         with open(temp_file_path, "wb") as temp_file:
-            shutil.copyfileobj(midi_file.file, temp_file)
+            temp_file.write(decoded_midi)
         midi = Score(temp_file_path)
     except Exception as e:
         return {"status": "failed", "message": str(e)}
     
-    # update midi
+    # # update midi
     midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
 
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(file_path)
+
+    with open(file_path, 'rb') as file:
+        file_content = b64encode(file.read())
     
-    return FileResponse(file_path, media_type="audio/midi")
+    return file_content
+
+
+# @router.post("/upload_midi/")
+# async def receive_midi(req: Request, midi_file: UploadFile = File(...), instnum: int = Form(...)):
+#     client_ip = req.client.host
+#     temp_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
+#     try:
+#         file_content = b64decode(midi_file.base64_file)
+#         base64_file = file_content.decode('utf-8')
+#         # 업로드된 파일을 임시 폴더에 저장
+#         with open(temp_file_path, "wb") as temp_file:
+#             # shutil.copyfileobj(midi_file.file, temp_file)
+#             temp_file.write(base64_file)
+
+#         midi = Score(temp_file_path)
+#     except Exception as e:
+#         return {"status": "failed", "message": str(e)}
+    
+#     # update midi
+#     midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
+
+#     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
+#     midi_data.dump_midi(file_path)
+
+#     return FileResponse(file_path, media_type="audio/midi")
