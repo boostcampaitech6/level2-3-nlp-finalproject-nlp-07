@@ -1,6 +1,6 @@
 {
     "MODEL_DIR": "./model/",
-    "GENERATE_MODEL_NAME": "fine-meta-full-checkpoint-39200",
+    "GENERATE_MODEL_NAME": "devbuzz142/finetune-nnn-balanced",
     "FRONT_MODEL_NAME": "SangGank/my-front-model",
     "PICKLE_PATH": "labels.pkl",
     "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",

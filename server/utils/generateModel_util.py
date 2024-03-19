@@ -14,12 +14,9 @@ EOS_TOKEN = "Track_End"
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def initialize_generate_model():
-    model_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME)
-    model = GPT2LMHeadModel.from_pretrained(model_path).to(DEVICE)
+    # model_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME)
+    model = GPT2LMHeadModel.from_pretrained(GENERATE_MODEL_NAME).to(DEVICE)
 
-    # tokenizer_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME+'/tokenizer.json')
-    # tokenizer = MMM(TokenizerConfig(), tokenizer_path)
-    # tokenizer = get_nnn_tokenizer(4)
     tokenizer = get_nnn_meta_tokenizer(4)
     model.resize_token_embeddings(len(tokenizer))
     return model, tokenizer
@@ -33,16 +30,20 @@ def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
         temperature=temperature,
         eos_token_id=eos_token_id,
     )
-    # ).cpu()
+
     return generated_ids
 
 def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperature=0.8):
-    # genre_instruments = get_instruments_for_generate_model(condition)[:top_tracks]
     emotion, tempo, genre = condition
+    # genre_instruments = get_instruments_for_generate_model(condition)[:top_tracks]
+    # for i, instruments in enumerate(genre_instruments):
     for i, instruments in enumerate(range(4)):
+        logging.info(f"for loop : {i}")
         if i == 0:
             input_text = "BOS_None Genre_" + genre + " Emotion_" + emotion
+            # input_text = "BOS_None Genre_" + genre + " Emotion_" + emotion + " Tempo_" + tempo
             generated_ids = torch.empty(1, 0).to(DEVICE)
+            logging.info(f"input : {input_text}")
 
         token_list = [tokenizer[token] for token in input_text.split()]
         token_ids = torch.tensor([token_list]).to(DEVICE)

@@ -107,6 +107,7 @@ def get_nnn_tokenizer(num_velocities=8):
     
 lakh_genres = ['Rock', 'Pop', 'Dance/Electronic', 'Jazz', 'R&B', 'Groove', 'Folk', 'Classical', 'World', 'Metal', "Children"]
 lakh_emotions = ['nostalgia', 'excitement', 'love', 'anger', 'happiness', 'sadness','calmness', 'gratitude', 'loneliness', 'anticipation']
+lakh_tempos = ['Moderato', 'Allegro', 'Presto', 'Andante']
 def get_nnn_meta_tokenizer(num_velocities=4):
     NNN = CodeplayTokenizer
     config = TokenizerConfig(
@@ -138,8 +139,14 @@ def get_nnn_meta_tokenizer(num_velocities=4):
         tokenizer.add_to_vocab(f'Emotion_{emotion}')
     emotion_len = len(tokenizer)
     
+    for tempo in lakh_tempos:
+        tokenizer.add_to_vocab(f'Tempo_{tempo}')
+    tempo_len = len(tokenizer)
+    
     print(f'MMM Tokenizer bandwith : 0 ~ {mmm_len}, ({mmm_len} tokens)')
     print(f'NNN Tokenizer bandwith : {mmm_len} ~ {nnn_len}, ({nnn_len-mmm_len} tokens)')
     print(f'Genre Tokenizer bandwith : {nnn_len} ~ {genre_len}, ({genre_len-nnn_len} tokens)')
     print(f'Emotion Tokenizer bandwith : {genre_len} ~ {emotion_len}, ({emotion_len-genre_len} tokens)')
+    print(f'Tempo Tokenizer bandwith : {emotion_len} ~ {tempo_len}, ({tempo_len-emotion_len} tokens)')
+
     return tokenizer
