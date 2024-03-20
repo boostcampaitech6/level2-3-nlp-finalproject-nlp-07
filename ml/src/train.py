@@ -66,7 +66,6 @@ def main(args):
         midi_paths = DATA_DIR + datasets[args.dataset]
         midi_paths = load_midi_paths(midi_paths)
     
-    print(midi_paths[0][0])
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=args.seed)
     print('num of train midi files:', len(train_midi_paths), 'num of valid midi files:', len(valid_midi_paths))
@@ -106,8 +105,8 @@ def main(args):
     
     
     # Get the output directory with timestamp.
-    OUTPUT_DIR = os.path.join(BASE_DIR, "../output")
-    save_path = OUTPUT_DIR + f"/{args.model}-{args.tokenizer}-{args.dataset}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    OUTPUT_DIR = os.path.join(BASE_DIR, f"..{args.save_path}")
+    save_path = OUTPUT_DIR + f"/-{args.model}-{args.tokenizer}-{args.dataset}/{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
     # Commented parameters correspond to the small model
     trainer_config = {

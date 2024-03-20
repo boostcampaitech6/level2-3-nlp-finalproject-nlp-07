@@ -18,6 +18,8 @@ def default_arguments(args_name='default'):
     # data params
     parser.add_argument('--dataset', type=str, default='lakh',
                         help='dataset (default: lakh)')
+    parser.add_argument('--meta_file_name', type=str, default='metas.csv',
+                        help='meta file name (default: metas.csv)')
     parser.add_argument('--max_seq_len', type=int, default=1024,
                         help='max sequence length (default: 1024)')
     parser.add_argument('--batch_size', type=int, default=16, 
@@ -42,6 +44,8 @@ def default_arguments(args_name='default'):
                         help='embedding dimension (default: 768)')
     
     # trainer
+    parser.add_argument('--save_path', type=str, default='/output',
+                        help='save path (default: /output)')
     parser.add_argument('--steps', type=int, default=400,
                         help='number of steps (default: 400)')
     
