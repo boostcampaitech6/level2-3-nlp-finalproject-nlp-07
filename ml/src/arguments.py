@@ -24,8 +24,8 @@ def default_arguments(args_name='default'):
                         help='max sequence length (default: 1024)')
     parser.add_argument('--batch_size', type=int, default=16, 
                         help='input batch size for training (default: 16)')
-    parser.add_argument('--tokenizer', type=str, default='NNN-vel4',
-                        help='tokenizer (default: NNN-vel4)')
+    parser.add_argument('--tokenizer', type=str, default='NNN4',
+                        help='tokenizer (default: NNN4 as NNN-vel4)')
     parser.add_argument('--chunk_bar_num', type=int, default=4,
                         help='chunk bar number (default: 4)')
     parser.add_argument('--overlap', type=int, default=0,

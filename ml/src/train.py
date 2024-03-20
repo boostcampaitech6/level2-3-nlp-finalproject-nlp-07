@@ -35,10 +35,8 @@ def main(args):
     set_random_seed(args.seed, args.deterministic)
     
     # set tokenizer
-    if args.tokenizer == "NNN-vel4":
+    if args.tokenizer == "NNN4":
         tokenizer = get_nnn_tokenizer(4)
-    elif args.tokenizer == "NNN-vel8":
-        tokenizer = get_nnn_tokenizer(8)
     elif args.tokenizer == "MMM":
         tokenizer = get_custom_tokenizer()
     elif args.tokenizer == "NNN-meta":
@@ -107,7 +105,7 @@ def main(args):
     
     # Get the output directory with timestamp.
     OUTPUT_DIR = os.path.join(BASE_DIR, f"..{args.save_path}")
-    save_path = OUTPUT_DIR + f"/{args.model}-{args.tokenizer}-{args.dataset}/{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    save_path = OUTPUT_DIR + f"/{args.model}-{args.dataset}-{args.tokenizer}/{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
     # Commented parameters correspond to the small model
     trainer_config = {
