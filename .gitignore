@@ -19,6 +19,7 @@ data/
 
 # Ignore ml models
 models/
+output/
 
 # Ignore python cache
 __pycache__/
