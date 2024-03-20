@@ -1,6 +1,6 @@
 import torch
 from fastapi import APIRouter, Form, File, UploadFile, Request
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from base64 import b64encode, b64decode
 import json
@@ -12,7 +12,7 @@ import logging
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from utils.utils import clear_huggingface_cache
+from utils.utils import clear_huggingface_cache, extract_tempo, modify_tempo
 from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
 from utils.frontModel_util import initialize_front_model, extract_condition
 from settings import TEMP_DIR
@@ -76,9 +76,11 @@ async def generate_midi(req: Request, text_data: TextData):
     logging.info(f"생성완료 : {file_path}")
 
     with open(file_path, 'rb') as file:
-        file_content = b64encode(file.read())
+        # file_content = b64encode(file.read())
+        file_content = b64encode(file.read()).decode('utf-8')
       
-    return file_content
+    # return file_content
+    return JSONResponse(content={"file_content": file_content, "condition": condition})
 
 @router.post("/upload_midi/")
 async def receive_midi(req: Request, request_json: UploadData):
@@ -88,24 +90,39 @@ async def receive_midi(req: Request, request_json: UploadData):
     parsed_json = json.loads(request_json.request_json)
     encoded_midi = parsed_json['midi']
     instnum = parsed_json['instnum']
+
+    # 생성 condition 저장 변수들
+    emotion = parsed_json['emotion']
+    tempo = parsed_json['tempo']
+    genre = parsed_json['genre']
+
+    logging.info(f"instnum : {instnum}, emotion: {emotion}, tempo: {tempo}, genre: {genre}")
     decoded_midi = b64decode(encoded_midi)
 
-    temp_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
+    recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
     try:
         # 업로드된 파일을 임시 폴더에 저장
-        with open(temp_file_path, "wb") as temp_file:
+        with open(recv_file_path, "wb") as temp_file:
             temp_file.write(decoded_midi)
-        midi = Score(temp_file_path)
+        midi = Score(recv_file_path)
     except Exception as e:
         return {"status": "failed", "message": str(e)}
     
-    # # update midi
+    # update midi
     midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
 
-    file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
-    midi_data.dump_midi(file_path)
+    add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
+    midi_data.dump_midi(add_file_path)
 
-    with open(file_path, 'rb') as file:
+    # modify tempo
+    temp_bpm = extract_tempo(recv_file_path)
+    logging.info(f"before_temp_bpm : {temp_bpm}")
+    if temp_bpm != None:
+        modify_tempo(add_file_path, temp_bpm)
+        temp_bpm = extract_tempo(add_file_path)
+        logging.info(f"after_temp_bpm : {temp_bpm}")
+
+    with open(add_file_path, 'rb') as file:
         file_content = b64encode(file.read())
     
     return file_content
