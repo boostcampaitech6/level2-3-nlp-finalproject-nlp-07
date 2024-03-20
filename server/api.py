@@ -12,13 +12,16 @@ import logging
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from utils.utils import clear_huggingface_cache, extract_tempo, modify_tempo
+from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo
 from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
 from utils.frontModel_util import initialize_front_model, extract_condition
 from settings import TEMP_DIR
 
 # 캐쉬 삭제
 clear_huggingface_cache(False)
+
+# temp 폴더 비우기
+clear_folder(TEMP_DIR)
 
 class TextData(BaseModel):
     prompt: str

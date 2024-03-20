@@ -16,6 +16,11 @@ def clear_huggingface_cache(delete: bool):
     else:
         logging.info("Hugging Face cache directory not found.")
 
+def clear_folder(folder_path):
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)
+        os.makedirs(folder_path)
+
 def extract_tempo(midi_file_path):
     try:
         mid = mido.MidiFile(midi_file_path)
