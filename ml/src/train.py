@@ -46,7 +46,7 @@ def main(args):
         raise ValueError("Invalid tokenizer: ", args.tokenizer)
     
     # set data path
-    if args.dataset not in datasets:
+    if args.dataset not in datasets and args.dataset != "ALL":
         raise ValueError("Invalid dataset: ", args.dataset)
     BASE_DIR = os.getcwd()
     DATA_DIR = os.path.join(BASE_DIR, "../data")
@@ -63,6 +63,11 @@ def main(args):
         ]
     else:
         midi_paths = DATA_DIR + datasets[args.dataset]
+        midi_paths = load_midi_paths(midi_paths)
+        
+    ######
+    if args.dataset == "ALL":
+        midi_paths = [DATA_DIR+datasets[k] for k in datasets.keys()]
         midi_paths = load_midi_paths(midi_paths)
     
     print('num of midi files:', len(midi_paths))
