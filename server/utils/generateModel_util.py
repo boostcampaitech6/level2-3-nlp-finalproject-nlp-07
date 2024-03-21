@@ -33,27 +33,62 @@ def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
 
     return generated_ids
 
+def check_track_condition(tokenizer, generated_ids):
+    """
+    생성된 track ids 가 옳바르게 생성되었는지 확인하는 함수
+    """
+
+    track_start_count = (generated_ids == tokenizer.vocab['Track_Start']).sum().item()
+    track_end_count = (generated_ids == tokenizer.vocab['Track_End']).sum().item()
+    bar_start_count = (generated_ids == tokenizer.vocab['Bar_Start']).sum().item()
+    bar_end_count = (generated_ids == tokenizer.vocab['Bar_End']).sum().item()
+
+    logging.info(f"track count (start, end) : {track_start_count}, {track_end_count}")
+    logging.info(f"bar count (start, end) : {bar_start_count}, {bar_end_count}")
+
+    if track_start_count != track_end_count or bar_start_count != bar_end_count:
+        logging.info("Token pairs do not match.")
+        return False
+    
+    if track_start_count == 1 and bar_start_count != 4:
+        logging.info("First generated track is not 4 bars long.")
+        return False
+    
+    if (bar_start_count / track_start_count) > 4:
+        logging.info("Generated track exceeds 4 bars.")
+        return False
+
+    return True 
+
 def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperature=0.8):
     emotion, tempo, genre = condition
-    # genre_instruments = get_instruments_for_generate_model(condition)[:top_tracks]
-    # for i, instruments in enumerate(genre_instruments):
-    for i, instruments in enumerate(range(4)):
-        logging.info(f"for loop : {i}")
+    track_counter  = 0
+    # while track_counter < 4:
+    for i in range(10):
+        logging.info("-"*5 + f"track_counter : {track_counter}" + "-"*5)
         if i == 0:
-            input_text = "BOS_None Genre_" + genre + " Emotion_" + emotion
-            # input_text = "BOS_None Genre_" + genre + " Emotion_" + emotion + " Tempo_" + tempo
-            generated_ids = torch.empty(1, 0).to(DEVICE)
+            logging.info(f"track count (start, end)")
+            input_text = BOS_TOKEN + " Genre_" + genre + " Emotion_" + emotion
+            # input_text = BOS_TOKEN + " Genre_" + genre + " Emotion_" + emotion + " Tempo_" + tempo
+            current_track_ids = torch.empty(1, 0).to(DEVICE)
             logging.info(f"input : {input_text}")
 
         token_list = [tokenizer[token] for token in input_text.split()]
         token_ids = torch.tensor([token_list]).to(DEVICE)
-        input_ids = torch.cat((generated_ids, token_ids), dim=1).to(torch.int64)
+        input_ids = torch.cat((current_track_ids, token_ids), dim=1).to(torch.int64)
 
         generated_ids = generate_additional_track(input_ids, model, tokenizer, temperature)
+
+        if check_track_condition(tokenizer, generated_ids):
+            current_track_ids = generated_ids
+            track_counter += 1
+
+        if track_counter >= 4:
+            break
     
     mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
+    # logging.info(mmm_tokens_ids)
     midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
-
     return midi_data
 
 def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
