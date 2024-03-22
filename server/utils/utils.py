@@ -61,3 +61,22 @@ def modify_tempo(midi_file_path, new_tempo_bpm):
         print(f"Tempo modified successfully. New tempo: {new_tempo_bpm} BPM")
     except Exception as e:
         print(f"Error: {e}")
+
+def extract_tempo(midi_file_path):
+    try:
+        mid = mido.MidiFile(midi_file_path)
+        
+        # Tempo 정보가 있는 첫 번째 트랙을 찾음
+        for track in mid.tracks:
+            for msg in track:
+                if msg.type == 'set_tempo':
+                    # Tempo 정보를 microseconds per beat 단위로 변환
+                    tempo = mido.tempo2bpm(msg.tempo)
+                    return tempo
+        # 템포 정보가 없는 경우
+        print("No tempo information found in MIDI file.")
+        return None
+    
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
