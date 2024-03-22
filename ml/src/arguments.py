@@ -20,7 +20,7 @@ def default_arguments(args_name='default'):
     # data params
     parser.add_argument('--dataset', type=str, default='lakh',
                         help='dataset (default: lakh)')
-    parser.add_argument('--meta_file_name', type=str, default='metas.csv',
+    parser.add_argument('--meta_file_name', type=str, default='metas',
                         help='meta file name (default: metas.csv)')
     parser.add_argument('--max_seq_len', type=int, default=1024,
                         help='max sequence length (default: 1024)')
@@ -65,7 +65,7 @@ def prev_arguments(args_name='prev'):
     # data params
     parser.add_argument('--dataset', type=str, default='lakh',
                         help='dataset (default: lakh)')
-    parser.add_argument('--meta_file_name', type=str, default='metas.csv',
+    parser.add_argument('--meta_file_name', type=str, default='metas',
                         help='meta file name (default: metas.csv)')
     parser.add_argument('--max_seq_len', type=int, default=1024,
                         help='max sequence length (default: 1024)')

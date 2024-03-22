@@ -28,7 +28,8 @@ def set_random_seed(seed=2024, deterministic=False):
 datasets = {
     "lakh": "/lakh-clean",
     "jazz": "/jazz-clean",
-    "kpop": "/kpop"
+    "kpop": "/kpop",
+    "ALL": "/all",
 }
 
 def main(args):
@@ -45,8 +46,33 @@ def main(args):
     else:
         raise ValueError("Invalid tokenizer: ", args.tokenizer)
     
+    #NOTE - nvidia update 필요합니다!
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print('device:', device)
+
+    #TODO -  context length는 자유롭게 바꿔보며 실험해봐도 좋을 듯 합니다.
+    context_length = args.max_seq_len
+
+    # gpt2 config
+    model_name = args.model
+    model_config = AutoConfig.from_pretrained(
+        model_name,
+        vocab_size=len(tokenizer),
+        n_positions=context_length,
+        n_layer=args.n_layer,
+        n_head=args.n_head,
+        pad_token_id=tokenizer["PAD_None"],
+        bos_token_id=tokenizer["BOS_None"],
+        eos_token_id=tokenizer["EOS_None"],
+        n_embd=args.n_emb
+    )
+    
+    model = GPT2LMHeadModel(model_config)
+    model.to(device)
+    
+    
     # set data path
-    if args.dataset not in datasets and args.dataset != "ALL":
+    if args.dataset not in datasets:
         raise ValueError("Invalid dataset: ", args.dataset)
     BASE_DIR = os.getcwd()
     DATA_DIR = os.path.join(BASE_DIR, "../data")
@@ -61,9 +87,6 @@ def main(args):
             for _, row in metas.iterrows()
             if Path(DATA_DIR + datasets[args.dataset] + f'/midi/{row["file_path"]}').exists()
         ]
-    elif args.dataset == "ALL":
-        midi_paths = [DATA_DIR+datasets[k] for k in datasets.keys()]
-        midi_paths = load_midi_paths(midi_paths)
     else:
         midi_paths = DATA_DIR + datasets[args.dataset]
         midi_paths = load_midi_paths(midi_paths)    
@@ -83,29 +106,6 @@ def main(args):
     collator = DataCollator(tokenizer["PAD_None"], tokenizer["BOS_None"], tokenizer["EOS_None"], copy_inputs_as_labels=True)
     print('tokenized train_dataset:', len(train_dataset), 'tokenized valid_dataset:', len(valid_dataset))
 
-    #TODO -  context length는 자유롭게 바꿔보며 실험해봐도 좋을 듯 합니다.
-    context_length = args.max_seq_len
-
-    # gpt2 config
-    model_config = AutoConfig.from_pretrained(
-        args.model,
-        vocab_size=len(tokenizer),
-        n_positions=context_length,
-        n_layer=args.n_layer,
-        n_head=args.n_head,
-        pad_token_id=tokenizer["PAD_None"],
-        bos_token_id=tokenizer["BOS_None"],
-        eos_token_id=tokenizer["EOS_None"],
-        n_embd=args.n_emb
-    )
-
-    #NOTE - nvidia update 필요합니다!
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print('device:', device)
-    
-    model = GPT2LMHeadModel(model_config)
-    model.to(device)
-    
     
     # Get the output directory with timestamp.
     OUTPUT_DIR = os.path.join(BASE_DIR, f"..{args.save_path}")
@@ -152,7 +152,7 @@ def main(args):
 if __name__ == '__main__':
     print('===== Training model... =====')
     
-    parser = set_arguments('default')
+    parser = set_arguments('deafult')
     args = parser.parse_args()
     
     print('==== arguments ====')
