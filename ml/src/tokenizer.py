@@ -105,11 +105,11 @@ def get_nnn_tokenizer(num_velocities=8):
     print(f'NNN Tokenizer bandwith : {prev_len} ~ {len(tokenizer)}, ({len(tokenizer)-prev_len} tokens)')
     return tokenizer
     
-lakh_genres = ['Rock', 'Pop', 'Dance/Electronic', 'Jazz', 'R&B', 'Groove', 'Folk', 'Classical', 'World', 'Metal', "Children", "Trot", "Hiphop", 'Ballade']
+lakh_genres = ['Unk', 'Rock', 'Pop', 'Dance/Electronic', 'Jazz', 'R&B', 'Groove', 'Folk', 'Classical', 'World', 'Metal', "Children", "Trot", "Hiphop", 'Ballade']
 lakh_genres += [str(i+1) for i in range(60-len(lakh_genres))] #60
-lakh_emotions = ['nostalgia', 'excitement', 'love', 'anger', 'happiness', 'sadness','calmness', 'gratitude', 'loneliness', 'anticipation']
+lakh_emotions = ['Unk', 'nostalgia', 'excitement', 'love', 'anger', 'happiness', 'sadness','calmness', 'gratitude', 'loneliness', 'anticipation']
 lakh_emotions += [str(i+1) for i in range(40-len(lakh_emotions))] #40
-lakh_tempos = ['Moderato', 'Allegro', 'Presto', 'Andante']
+lakh_tempos = ['Unk', 'Moderato', 'Allegro', 'Presto', 'Andante']
 lakh_tempos += [str(i+1) for i in range(40-len(lakh_tempos))] #40
 def get_nnn_meta_tokenizer(num_velocities=4):
     NNN = CodeplayTokenizer
