@@ -43,8 +43,8 @@ def check_track_condition(tokenizer, generated_ids):
     bar_start_count = (generated_ids == tokenizer.vocab['Bar_Start']).sum().item()
     bar_end_count = (generated_ids == tokenizer.vocab['Bar_End']).sum().item()
 
-    logging.info(f"track count (start, end) : {track_start_count}, {track_end_count}")
-    logging.info(f"bar count (start, end) : {bar_start_count}, {bar_end_count}")
+    # logging.info(f"track count (start, end) : {track_start_count}, {track_end_count}")
+    # logging.info(f"bar count (start, end) : {bar_start_count}, {bar_end_count}")
 
     if track_start_count != track_end_count or bar_start_count != bar_end_count:
         logging.info("Token pairs do not match.")
@@ -56,6 +56,14 @@ def check_track_condition(tokenizer, generated_ids):
     
     if (bar_start_count / track_start_count) > 4:
         logging.info("Generated track exceeds 4 bars.")
+        return False
+    
+    instrument_vocab_ids = [value for key, value in tokenizer.vocab.items() if 'Program_' in key]
+    instrument_ids = [item.item() for item in generated_ids[0] if item.item() in instrument_vocab_ids]
+    is_duplicate = len(set(instrument_ids)) != len(instrument_ids)
+    # logging.info(f"instrument_ids : {instrument_ids}")
+    if is_duplicate:
+        logging.info(f"Duplicate instruments were created.")
         return False
 
     return True 
