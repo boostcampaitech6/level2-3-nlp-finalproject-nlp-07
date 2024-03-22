@@ -152,7 +152,7 @@ def main(args):
 if __name__ == '__main__':
     print('===== Training model... =====')
     
-    parser = set_arguments('deafult')
+    parser = set_arguments('default')
     args = parser.parse_args()
     
     print('==== arguments ====')
