@@ -61,14 +61,13 @@ def main(args):
             for _, row in metas.iterrows()
             if Path(DATA_DIR + datasets[args.dataset] + f'/midi/{row["file_path"]}').exists()
         ]
-    else:
-        midi_paths = DATA_DIR + datasets[args.dataset]
-        midi_paths = load_midi_paths(midi_paths)
-        
-    ######
-    if args.dataset == "ALL":
+    elif args.dataset == "ALL":
         midi_paths = [DATA_DIR+datasets[k] for k in datasets.keys()]
         midi_paths = load_midi_paths(midi_paths)
+    else:
+        midi_paths = DATA_DIR + datasets[args.dataset]
+        midi_paths = load_midi_paths(midi_paths)    
+    
     
     print('num of midi files:', len(midi_paths))
     train_midi_paths, valid_midi_paths = split_train_valid(midi_paths, valid_ratio=0.05, shuffle=True, seed=args.seed)
