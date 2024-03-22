@@ -36,10 +36,10 @@ def default_arguments(args_name='default'):
     # model params
     parser.add_argument('--model', type=str, default='gpt2',
                         help='model (default: gpt2)')
-    parser.add_argument('--n_layer', type=int, default=12,
-                        help='number of layers (default: 12)')
-    parser.add_argument('--n_head', type=int, default=6,
-                        help='number of heads (default: 6)')
+    parser.add_argument('--n_layer', type=int, default=8,
+                        help='number of layers (default: 8)')
+    parser.add_argument('--n_head', type=int, default=12,
+                        help='number of heads (default: 12)')
     parser.add_argument('--n_emb', type=int, default=768,
                         help='embedding dimension (default: 768)')
     
