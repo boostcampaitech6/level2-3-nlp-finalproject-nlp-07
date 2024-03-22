@@ -213,8 +213,7 @@ class CodeplayDataset(_DatasetABC):
                 meta_ids = []
                 meta_ids.append(tokenizer[f'Genre_{genre}'])
                 meta_ids.append(tokenizer[f'Emotion_{emotion}'])
-                #NOTE - TEMPO TOKEN 추가 필요
-                # meta_ids.append(tokenizer[f'Tempo_{tempo}'])
+                meta_ids.append(tokenizer[f'Tempo_{tempo}'])
                 tokens_ids = meta_ids + tokens_ids
 
             # Cut tokens in samples of appropriate length
