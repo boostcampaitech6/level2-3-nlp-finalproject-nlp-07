@@ -6,6 +6,7 @@ from base64 import b64encode, b64decode
 import json
 
 from symusic import Score
+from symusic.core import TempoTick
 import googletrans
 import os, shutil
 import logging
@@ -14,7 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
 from utils.frontModel_util import initialize_front_model, extract_condition
-from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo
+from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
 
@@ -75,13 +76,14 @@ async def generate_midi(req: Request, text_data: TextData):
     # generate model - midi track 생성
     midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, top_tracks=5, temperature=0.8)
 
+    # modify tempo
+    temp_bpm = generate_tempo(text, condition)
+    new_tempo_tick = TempoTick(time=0, qpm=temp_bpm)
+    midi_data.tempos[0] = new_tempo_tick
+
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)
     logging.info(f"생성완료 : {file_path}")
-
-    # modify tempo
-    temp_bpm = generate_tempo(text, condition)
-    modify_tempo(file_path, temp_bpm)
 
     with open(file_path, 'rb') as file:
         # file_content = b64encode(file.read())
@@ -134,6 +136,16 @@ async def receive_midi(req: Request, request_json: UploadData):
         file_content = b64encode(file.read())
     
     return file_content
+
+    response = {
+        "success": True,
+    }
+    response = {
+        "success": "",
+        "error": "Too many tokens provided as input"
+    }
+
+    return JSONResponse(content={"file_content": file_content, "error": error_dict["too_many..."]})
 
 
 # @router.post("/upload_midi/")

@@ -47,13 +47,14 @@ def modify_tempo(midi_file_path, new_tempo_bpm):
         ticks_per_beat = mid.ticks_per_beat
         
         # 새로운 템포 값으로 변환
-        new_tempo = mido.bpm2tempo(new_tempo_bpm)
+        new_tempo = mido.bpm2tempo(new_tempo_bpm) 
         
         # 템포 메시지 생성
         tempo_msg = mido.MetaMessage('set_tempo', tempo=new_tempo, time=0)
         
         # 첫 번째 트랙의 첫 이벤트로 삽입
-        mid.tracks[0].insert(0, tempo_msg)
+        # mid.tracks[0].insert(0, tempo_msg)
+        mid.tracks[0][1] = tempo_msg
         
         # 새로운 파일 저장
         mid.save(midi_file_path)
