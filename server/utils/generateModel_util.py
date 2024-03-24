@@ -33,11 +33,12 @@ def generate_additional_track(input_ids, model, tokenizer, temperature=0.8):
 
     return generated_ids
 
-def check_track_condition(tokenizer, generated_ids):
+def check_track_condition(tokenizer, generated_ids, first_track_check=True):
     """
     생성된 track ids 가 옳바르게 생성되었는지 확인하는 함수
     """
 
+    ### Start, End Token 체크
     track_start_count = (generated_ids == tokenizer.vocab['Track_Start']).sum().item()
     track_end_count = (generated_ids == tokenizer.vocab['Track_End']).sum().item()
     bar_start_count = (generated_ids == tokenizer.vocab['Bar_Start']).sum().item()
@@ -50,14 +51,23 @@ def check_track_condition(tokenizer, generated_ids):
         logging.info("Token pairs do not match.")
         return False
     
-    if track_start_count == 1 and bar_start_count != 4:
-        logging.info("First generated track is not 4 bars long.")
-        return False
-    
     if (bar_start_count / track_start_count) > 4:
         logging.info("Generated track exceeds 4 bars.")
         return False
     
+    if track_start_count == 1 and first_track_check==True:
+        if bar_start_count != 4:
+            logging.info("First generated track is not 4 bars long.")
+            return False
+
+        bar_start_first_token_index = (generated_ids == tokenizer.vocab['Bar_Start']).nonzero()[0][1].item()
+        bar_start_end_token_index = (generated_ids == tokenizer.vocab['Bar_End']).nonzero()[0][1].item()
+        if bar_start_first_token_index == bar_start_end_token_index-1:
+            logging.info("No content generated for the first bar of the first track.")
+            return False
+
+    
+    ### 중복 악기 생성 체크
     instrument_vocab_ids = [value for key, value in tokenizer.vocab.items() if 'Program_' in key]
     instrument_ids = [item.item() for item in generated_ids[0] if item.item() in instrument_vocab_ids]
     is_duplicate = len(set(instrument_ids)) != len(instrument_ids)
@@ -108,10 +118,17 @@ def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
     token_list = [tokenizer[token] for token in updated_text.split()]
     mmm_tokens_ids = tokenizer(midi).ids + token_list
     nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
+    logging.info(f"nnn_tokens_ids : {len(nnn_tokens_ids)}")
     nnn_tokens_ids = torch.tensor([nnn_tokens_ids]).to(DEVICE)
     
-    generated_ids = generate_additional_track(nnn_tokens_ids, model, tokenizer, temperature)
+    for i in range(5):
+        generated_ids = generate_additional_track(nnn_tokens_ids, model, tokenizer, temperature)
+        if check_track_condition(tokenizer, generated_ids, first_track_check=False):
+            break
+
     mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
     midi_data = tokenizer.tokens_to_midi(mmm_generated_ids)
+    logging.info(f"midi_data : {midi_data}")
+    logging.info(f"midi_data : {midi_data.tempos}")
 
     return midi_data
