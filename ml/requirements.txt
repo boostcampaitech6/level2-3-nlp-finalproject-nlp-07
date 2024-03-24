@@ -8,3 +8,5 @@ transformers
 accelerate
 pyyaml
 pytz
+scikit-learn
+tqdm
