@@ -109,18 +109,15 @@ def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperatur
     midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
     return midi_data
 
-def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
+def generate_track_update(model, tokenizer, token_ids, track_num, temperature=0.8):
     if track_num == 999:
         updated_text = "Track_Start"
     else:
         updated_text = f"Track_Start Program_{track_num}"
 
     token_list = [tokenizer[token] for token in updated_text.split()]
-    mmm_tokens_ids = tokenizer(midi).ids + token_list
+    mmm_tokens_ids = token_ids + token_list
     nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
-    logging.info(f"nnn_tokens_ids : {len(nnn_tokens_ids)}")
-    if len(nnn_tokens_ids) >= 1000:
-        return None
     nnn_tokens_ids = torch.tensor([nnn_tokens_ids]).to(DEVICE)
     
     for i in range(5):
@@ -129,8 +126,93 @@ def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
             break
 
     mmm_generated_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
+    return mmm_generated_ids
+
+def generate_updated_midi(model, tokenizer, midi, track_num, temperature=0.8):
+    token_ids = tokenizer(midi).ids
+    mmm_generated_ids = generate_track_update(model, tokenizer, token_ids, track_num, temperature)
     midi_data = tokenizer.tokens_to_midi(mmm_generated_ids)
-    logging.info(f"midi_data : {midi_data}")
-    logging.info(f"midi_data : {midi_data.tempos}")
+    return midi_data
+
+def chunk_tokens_by_token(tokenizer, ids_list, music_unit):
+    """
+    주어진 토큰 리스트를 music_unit으로 구분하여 chunk하는 함수
+    """
+    track_chunks = []
+    start_idx = 0
+    start_token = music_unit + "_Start"
+    end_token = music_unit + "_End"
+
+    for i, token in enumerate(ids_list):
+        if token == tokenizer.vocab[start_token]:
+            start_idx = i
+            if start_idx != 0 and not track_chunks:
+                track_chunks.append(ids_list[:start_idx])
+        if token == tokenizer.vocab[end_token]:
+            track_chunks.append(ids_list[start_idx:i+1])
+            start_idx = i+1
+
+    if start_idx != len(ids_list):
+        track_chunks.append(ids_list[start_idx:])
+    
+    return track_chunks
+
+def chunk_tracks_and_bars(ids_list, tokenizer):
+    """
+    트랙과 바를 chunk하는 함수
+    """
+    track_chunks_ids = chunk_tokens_by_token(tokenizer, ids_list, "Track")
+    track_bar_chunks_ids = []
+    for track in track_chunks_ids:
+        bar_chunk_track = chunk_tokens_by_token(tokenizer, track, "Bar")
+        track_bar_chunks_ids.append(bar_chunk_track)
+    return track_bar_chunks_ids
+
+def extract_index(regenPart):
+    """
+    재생성 부분에 대한 인덱스 범위를 추출하는 함수
+    """
+    if regenPart == "front":
+        return 1, 4
+    elif regenPart == "back":
+        return 5, 8
+
+def extract_four_bars(track_bar_chunks_ids, regenPart):
+    """
+    재생성 부분에 해당하는 네 바를 추출하는 함수
+    """
+    regen_start_idx, regen_end_idx = extract_index(regenPart)
+
+    four_bar_chunks_ids = []
+    for track in track_bar_chunks_ids:
+        four_bar_chunk = [track[0]] + track[regen_start_idx:regen_end_idx+1] + [track[-1]]
+        four_bar_chunks_ids.append(four_bar_chunk)
+
+    return four_bar_chunks_ids
+
+def generate_update_8bar_track(model, tokenizer, midi, track_num, regenPart, temperature=0.8):
+    """
+    8바 트랙을 업데이트하고 재생성하는 함수
+    """
+    # 트랙과 바를 chunk
+    all_tracks_track_bar_chunks_ids = chunk_tracks_and_bars(tokenizer(midi).ids, tokenizer)
+    all_track_four_bar_chunk = extract_four_bars(all_tracks_track_bar_chunks_ids, regenPart)
+
+    # 재생성
+    regen_input_ids = [element for track in all_track_four_bar_chunk[:-1] for bar in track for element in bar]
+    generated_ids = generate_track_update(model, tokenizer, regen_input_ids, track_num, temperature)
+
+    # 업데이트
+    regen_start_idx, regen_end_idx = extract_index(regenPart)
+    generated_track_chunk_ids = chunk_tokens_by_token(tokenizer, generated_ids, "Track")
+    generated_bars_ids = chunk_tokens_by_token(tokenizer, generated_track_chunk_ids[-1], "Bar")[1:-1]
+    all_tracks_track_bar_chunks_ids[-1][regen_start_idx:regen_end_idx+1] = generated_bars_ids
+
+    # 재생성된 토큰을 MIDI로 변환
+    regen_ids = [element for track in all_tracks_track_bar_chunks_ids for bar in track for element in bar]
+    midi_data = tokenizer.tokens_to_midi(regen_ids)
 
     return midi_data
+
+def generate_add_8bar_track(model, tokenizer, midi, track_num, temperature=0.8):
+    pass

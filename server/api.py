@@ -13,7 +13,13 @@ import logging
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
+from utils.generateModel_util import (
+    initialize_generate_model, 
+    generate_initial_track, 
+    generate_updated_midi, 
+    generate_update_8bar_track,
+    generate_add_8bar_track
+)
 from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
 from utils.data_processing import generate_tempo
@@ -100,33 +106,36 @@ async def receive_midi(req: Request, request_json: UploadData):
     parsed_json = json.loads(request_json.request_json)
     encoded_midi = parsed_json['midi']
     instnum = parsed_json['instnum']
+    regenPart = parsed_json['regenPart']
 
-    # 생성 condition 저장 변수들
-    emotion = parsed_json['emotion']
-    tempo = parsed_json['tempo']
-    genre = parsed_json['genre']
+    # 'emotion', 'tempo', 'genre' 키가 있는지 확인하고 없을 경우 기본값 할당
+    emotion = parsed_json.get('emotion', 'love')
+    tempo = parsed_json.get('tempo', 'Allegro')
+    genre = parsed_json.get('genre', 'Pop')
 
-    logging.info(f"instnum : {instnum}, emotion: {emotion}, tempo: {tempo}, genre: {genre}")
     decoded_midi = b64decode(encoded_midi)
 
-    recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
+    # 업로드된 파일을 임시 폴더에 저장
     try:
-        # 업로드된 파일을 임시 폴더에 저장
+        recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
         with open(recv_file_path, "wb") as temp_file:
             temp_file.write(decoded_midi)
         midi = Score(recv_file_path)
     except Exception as e:
-        return {"status": "failed", "message": str(e)}
-    
-    # update midi
-    midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
-    logging.info(f"=== {type(midi_data)}")
-    if not isinstance(midi_data, Score):
         response = {
             "success": False,
-            "error": "Too many tokens provided as input"
+            "error": str(e)
         }
         return JSONResponse(content={"response": response})
+    
+    logging.info(f"instnum : {instnum}, emotion: {emotion}, tempo: {tempo}, genre: {genre}")
+    # update midi
+    if regenPart == "default":
+        midi_data = generate_updated_midi(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
+    elif regenPart == "front" or regenPart == "back" :
+        midi_data = generate_update_8bar_track(generate_model, generate_tokenizer, midi, instnum, regenPart, temperature=0.8)
+    elif regenPart == "both":
+        midi_data = generate_add_8bar_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
 
     add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(add_file_path)
@@ -152,7 +161,7 @@ async def receive_midi(req: Request, request_json: UploadData):
     # return JSONResponse(content={"response": response_dict})
 
 # Extension : 4마디 -> 8마디 연장 (model3)
-@router.post("/extension_midi/")
+@router.post("/extend_midi/")
 async def extension_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
     logging.info(f"req : {client_ip}")
