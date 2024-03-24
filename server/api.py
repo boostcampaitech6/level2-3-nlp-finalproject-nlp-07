@@ -92,13 +92,6 @@ async def generate_midi(req: Request, text_data: TextData):
     # return file_content
     return JSONResponse(content={"file_content": file_content, "condition": condition})
 
-    response = {
-        "success": True,
-        "content" : {"file_content": file_content, "condition": condition}
-    }
-
-    return JSONResponse(content={"response": response})
-
 @router.post("/upload_midi/")
 async def receive_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
@@ -134,9 +127,6 @@ async def receive_midi(req: Request, request_json: UploadData):
             "error": "Too many tokens provided as input"
         }
         return JSONResponse(content={"response": response})
-    else:
-        response_status = 'failure'
-        error_message = midi_data
 
     add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(add_file_path)
@@ -154,9 +144,22 @@ async def receive_midi(req: Request, request_json: UploadData):
     
     return file_content
 
-    response = {
-        "success": True,
-        "content" : {"file_content": file_content}
-    }
+    # response_dict = {
+    #     "success" : True,
+    #     "content" : {"file_content": file_content}
+    # }
 
-    return JSONResponse(content={"response": response})
+    # return JSONResponse(content={"response": response_dict})
+
+# Extension : 4마디 -> 8마디 연장 (model3)
+@router.post("/extension_midi/")
+async def extension_midi(req: Request, request_json: UploadData):
+    client_ip = req.client.host
+    logging.info(f"req : {client_ip}")
+
+# Infill 1마디 교체 (model3)
+@router.post("/infill_midi/")
+async def infill_midi(req: Request, request_json: UploadData):
+    client_ip = req.client.host
+    logging.info(f"req : {client_ip}")
+
