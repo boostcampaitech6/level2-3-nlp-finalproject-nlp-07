@@ -119,6 +119,8 @@ def generate_update_track(model, tokenizer, midi, track_num, temperature=0.8):
     mmm_tokens_ids = tokenizer(midi).ids + token_list
     nnn_tokens_ids = mmm_to_nnn(mmm_tokens_ids, tokenizer)
     logging.info(f"nnn_tokens_ids : {len(nnn_tokens_ids)}")
+    if len(nnn_tokens_ids) >= 1000:
+        return None
     nnn_tokens_ids = torch.tensor([nnn_tokens_ids]).to(DEVICE)
     
     for i in range(5):

@@ -92,6 +92,13 @@ async def generate_midi(req: Request, text_data: TextData):
     # return file_content
     return JSONResponse(content={"file_content": file_content, "condition": condition})
 
+    response = {
+        "success": True,
+        "content" : {"file_content": file_content, "condition": condition}
+    }
+
+    return JSONResponse(content={"response": response})
+
 @router.post("/upload_midi/")
 async def receive_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
@@ -120,6 +127,16 @@ async def receive_midi(req: Request, request_json: UploadData):
     
     # update midi
     midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
+    logging.info(f"=== {type(midi_data)}")
+    if not isinstance(midi_data, Score):
+        response = {
+            "success": False,
+            "error": "Too many tokens provided as input"
+        }
+        return JSONResponse(content={"response": response})
+    else:
+        response_status = 'failure'
+        error_message = midi_data
 
     add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(add_file_path)
@@ -139,35 +156,7 @@ async def receive_midi(req: Request, request_json: UploadData):
 
     response = {
         "success": True,
-    }
-    response = {
-        "success": "",
-        "error": "Too many tokens provided as input"
+        "content" : {"file_content": file_content}
     }
 
-    return JSONResponse(content={"file_content": file_content, "error": error_dict["too_many..."]})
-
-
-# @router.post("/upload_midi/")
-# async def receive_midi(req: Request, midi_file: UploadFile = File(...), instnum: int = Form(...)):
-#     client_ip = req.client.host
-#     temp_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_recv.mid")
-#     try:
-#         file_content = b64decode(midi_file.base64_file)
-#         base64_file = file_content.decode('utf-8')
-#         # 업로드된 파일을 임시 폴더에 저장
-#         with open(temp_file_path, "wb") as temp_file:
-#             # shutil.copyfileobj(midi_file.file, temp_file)
-#             temp_file.write(base64_file)
-
-#         midi = Score(temp_file_path)
-#     except Exception as e:
-#         return {"status": "failed", "message": str(e)}
-    
-#     # update midi
-#     midi_data = generate_update_track(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
-
-#     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
-#     midi_data.dump_midi(file_path)
-
-#     return FileResponse(file_path, media_type="audio/midi")
+    return JSONResponse(content={"response": response})
