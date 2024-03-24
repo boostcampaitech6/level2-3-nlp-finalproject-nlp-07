@@ -215,4 +215,29 @@ def generate_update_8bar_track(model, tokenizer, midi, track_num, regenPart, tem
     return midi_data
 
 def generate_add_8bar_track(model, tokenizer, midi, track_num, temperature=0.8):
-    pass
+    # 트랙과 바를 chunk
+    all_tracks_track_bar_chunks_ids = chunk_tracks_and_bars(tokenizer(midi).ids, tokenizer)
+    front_chunk = extract_four_bars(all_tracks_track_bar_chunks_ids, "front")
+    back_chunk = extract_four_bars(all_tracks_track_bar_chunks_ids, "back")
+
+    # 재생성
+    regen_input_front_ids = [element for track in front_chunk[:-1] for bar in track for element in bar]
+    generated_front_ids = generate_track_update(model, tokenizer, regen_input_front_ids, track_num, temperature)
+
+    regen_input_back_ids = [element for track in front_chunk[:-1] for bar in track for element in bar]
+    generated_back_ids = generate_track_update(model, tokenizer, regen_input_back_ids, track_num, temperature)
+
+    # Front track과 Back track을 합쳐서 전체 트랙을 완성
+    regen_front_chunk = chunk_tracks_and_bars(generated_front_ids, tokenizer)
+    regen_back_chunk = chunk_tracks_and_bars(generated_back_ids, tokenizer)
+
+    all_track_chunk_ids = []
+    for front_track, back_track in zip(regen_front_chunk, regen_back_chunk):
+        track = front_track[:-1] + back_track[1:-1] + [front_track[-1]]
+        all_track_chunk_ids.append(track)
+
+    # 재생성된 토큰을 MIDI로 변환
+    regen_ids = [element for track in all_track_chunk_ids for bar in track for element in bar]
+    midi_data = tokenizer.tokens_to_midi(regen_ids)
+
+    return midi_data
