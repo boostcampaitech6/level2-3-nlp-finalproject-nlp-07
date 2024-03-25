@@ -33,3 +33,6 @@ test/
 
 # Ingore wandb logs
 wandb/
+
+# misc
+.DS_Store

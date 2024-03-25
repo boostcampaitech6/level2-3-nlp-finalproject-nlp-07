@@ -10,6 +10,7 @@ import Spinner from "react-bootstrap/Spinner";
 import MultiTrackView from './MultiTrackView.react.js'
 import SampleMidiDropdown from "../utils/SampleMidiDropdown.js";
 import InstListDropdown from "../utils/InstListDropdown.js";
+// import { instrumentMap } from "../utils/InstrumentList";
 
 import { Midi } from '@tonejs/midi'
 import { ButtonGroup } from "react-bootstrap";
@@ -44,6 +45,7 @@ const MidiView = (props) => {
     const [midiFile, setMidiFile] = useState();
     const [fileName, setFileName] = useState("Drag and drop MIDI file here")
     const [sampleTitle, setSampleTitle] = useState("Sample MIDI");
+    const [instrumentObject, setInstrumentObject] = useState({});
     const [regenTrackIdx, setRegenTrackIdx] = useState(null);
     const [regenInstNum, setRegenInstNum] = useState();
     const [addInstNum, setAddInstNum] = useState(999);
@@ -145,7 +147,6 @@ const MidiView = (props) => {
     // 현재 MIDI File을 서버에 보내고, 추가 혹은 수정된 미디 파일을 받는 함수
     const sendMidiToServerLambda = ({ operateType, midi, instNum, regenBarIndex, regenPart }) => {
 
-
         // Create FormData object
         const midiArray = midi.toArray()
         const base64Data = btoa(String.fromCharCode.apply(null, midiArray));
@@ -165,14 +166,14 @@ const MidiView = (props) => {
             });
             setIsAdding(true);
         } else if (operateType === "extend") {
-            console.log(`Extend Midi to 8 bars`);
+            // console.log(`Extend Midi to 8 bars`);
             url = "https://eqipz7j6o7.execute-api.ap-northeast-2.amazonaws.com/default/codeplayExtendMidi"; // AWS API Gateway Endpoint
             bodyData = JSON.stringify({
                 "midi": base64Data
             })
             setIsExtending(true);
         } else if (operateType === "infill") {
-            console.log(`regenBarIndex: ${regenBarIndex}`);
+            // console.log(`regenBarIndex: ${regenBarIndex}`);
             url = "https://65yj39pow7.execute-api.ap-northeast-2.amazonaws.com/default/codeplayInfillMidi";
             bodyData = JSON.stringify({
                 "midi": base64Data,
@@ -232,6 +233,54 @@ const MidiView = (props) => {
 
                         // operateType에 따라 나눠서 응답 미디 파일 처리
                         if (operateType === "extend" || operateType === "infill") {
+
+                            console.log(instrumentObject);
+                            console.log(midiFile);
+
+                            // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
+                            const tempTrackInstOrder = {}
+                            Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                if (track.instrument.percussion) {
+                                    tempTrackInstOrder[-1] = idx;
+                                } else {
+                                    tempTrackInstOrder[track.instrument.number] = idx;
+                                }
+                            })
+
+                            console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
+
+                            const trackSort = (a, b) => {
+                                if (a.instrument.percussion) {
+                                    const orderA = tempTrackInstOrder[-1]; 
+                                    const orderB = tempTrackInstOrder[b.instrument.number]; 
+                                    return orderA - orderB; 
+                                } else if (b.instrument.percussion) {
+                                    const orderA = tempTrackInstOrder[a.instrument.number]; 
+                                    const orderB = tempTrackInstOrder[-1]; 
+                                    return orderA - orderB; 
+                                } else {
+                                    const orderA = tempTrackInstOrder[a.instrument.number];
+                                    const orderB = tempTrackInstOrder[b.instrument.number];
+                                    return orderA - orderB;
+                                }
+                            };
+                            midi.tracks.sort(trackSort);
+                            console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
+                            console.log(`midi after sort: ${midi}`)
+
+                            // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
+                            const tempInstNameObject = {}
+
+                            Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                tempInstNameObject[idx] = track.name;
+                            })
+                            console.log(`tempInstNameObject: ${tempInstNameObject}`);
+                            // console.log(typeof midi);
+
+                            midi.tracks.forEach((track, idx) => {
+                                track.name = tempInstNameObject[idx];
+                            })
+
                             setMidiFile(midi);
                         } else if (operateType === "add") {
                             const lastTrack = midi.tracks[midi.tracks.length - 1];
@@ -362,6 +411,7 @@ const MidiView = (props) => {
                         isExtending={isExtending}
                         isInfilling={isInfilling}
                         infillHighlightBar={infillHighlightBar}
+                        instrumentObject={instrumentObject}
                         isGenerating={props.isGenerating}
                         handleClickInfill={handleClickInfill}
                         setIsInfilling={setIsInfilling}
@@ -369,6 +419,7 @@ const MidiView = (props) => {
                         setTotalBars={setTotalBars}
                         setBarsToRegen={setBarsToRegen}
                         setMidiFile={setMidiFile}
+                        setInstrumentObject={setInstrumentObject}
                         setRegenTrackIdx={setRegenTrackIdx}
                         setRegenInstNum={setRegenInstNum}
                         setRegenTrigger={setRegenTrigger}

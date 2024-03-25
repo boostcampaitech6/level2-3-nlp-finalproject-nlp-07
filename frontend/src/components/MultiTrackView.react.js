@@ -41,7 +41,7 @@ const MultiTrackView = (props) => {
   const [synths, setSynths] = useState([]);
   const [soloTrack, setSoloTrack] = useState([]);
   const [mutedTracks, setMutedTracks] = useState([]);
-  const [instrumentObject, setInstrumentObject] = useState({});
+  // const [instrumentObject, setInstrumentObject] = useState({});
   const [infillBarIdx, setInfillBarIdx] = useState();
 
 
@@ -73,9 +73,9 @@ const MultiTrackView = (props) => {
       const barNumbersFromMidi = Math.round(props.midiFile.durationTicks / ticksPerBeatFromMidi / beatsPerBarFromMidi / 4) * 4; // Math.round to interval of 4
       const totalMsVal = msPerBeat * beatsPerBarFromMidi * barNumbersFromMidi;
 
-      console.log(`Ticks Per Beat: ${ticksPerBeatFromMidi}`);
-      console.log(`beatsPerBarFromMidi: ${beatsPerBarFromMidi}`);
-      console.log(`barNumbersFromMidi(log only, not used): ${barNumbersFromMidi}`);
+      // console.log(`Ticks Per Beat: ${ticksPerBeatFromMidi}`);
+      // console.log(`beatsPerBarFromMidi: ${beatsPerBarFromMidi}`);
+      // console.log(`barNumbersFromMidi(log only, not used): ${barNumbersFromMidi}`);
 
 
       // MIDI File 및 시간 정보 적용
@@ -101,7 +101,7 @@ const MultiTrackView = (props) => {
         }
 
         Soundfont.instrument(audioContext, inst).then(function (play) {
-          setInstrumentObject((prev) => {
+          props.setInstrumentObject((prev) => {
             return { ...prev, [idx]: play };
           });
         });
@@ -120,10 +120,10 @@ const MultiTrackView = (props) => {
 
   // Solo 및 Mute 트랙 볼륨 처리
   useEffect(() => {
-    if (instrumentObject) {
+    if (props.instrumentObject) {
       // 1. Solo가 켜 있을 때
       if (soloTrack.length > 0) {
-        Object.entries(instrumentObject).forEach(([idx, inst]) => {
+        Object.entries(props.instrumentObject).forEach(([idx, inst]) => {
           if (soloTrack.includes(Number(idx))) {
             inst.out.gain.value = 1
           } else {
@@ -133,7 +133,7 @@ const MultiTrackView = (props) => {
       } else if (soloTrack.length == 0) {
         // 2-1. Solo가 꺼 있고, Mute는 켜 있을 때
         if (mutedTracks.length > 0) {
-          Object.entries(instrumentObject).forEach(([idx, inst]) => {
+          Object.entries(props.instrumentObject).forEach(([idx, inst]) => {
             if (mutedTracks.includes(Number(idx))) {
               inst.out.gain.value = 0
             } else {
@@ -142,13 +142,13 @@ const MultiTrackView = (props) => {
           })
         } else if (mutedTracks.length == 0) {
           // 2-2. Solo도 꺼 있고, Mute도 꺼 있을 때
-          Object.entries(instrumentObject).forEach(([idx, inst]) => {
+          Object.entries(props.instrumentObject).forEach(([idx, inst]) => {
             inst.out.gain.value = 1
           })
         }
       }
     }
-  }, [instrumentObject, soloTrack, mutedTracks])
+  }, [props.instrumentObject, soloTrack, mutedTracks])
 
 
   // ======== Midi Playing / Editing Functions
@@ -173,20 +173,20 @@ const MultiTrackView = (props) => {
               duration: note.duration,
             });
         });
-        instrumentObject[idx].schedule(acTime, notes_arr);
+        props.instrumentObject[idx].schedule(acTime, notes_arr);
       });
   };
 
   // Pause Instrument at current position
   const pauseInstrument = () => {
-    Object.entries(instrumentObject).forEach(([idx, inst]) => {
+    Object.entries(props.instrumentObject).forEach(([idx, inst]) => {
       inst.stop()
     })
   }
 
   // Stop Button
   const stopInstrument = () => {
-    Object.entries(instrumentObject).forEach(([idx, inst]) => {
+    Object.entries(props.instrumentObject).forEach(([idx, inst]) => {
       inst.stop()
     })
     setCurrentTime(0);
@@ -352,8 +352,10 @@ const MultiTrackView = (props) => {
   const handleNoteStyle = (noteIdx, barIdx, time, startTicks, durationTicks, duration, nextStartTime, pitch, highlightOn) => {
     const currentTimeSec = currentTime / 1000;
     const currentBar = Math.floor(currentTime / (totalMs / props.totalBars));
-    const durationPercent = (durationTicks / (ticksPerBeat * beatsPerBar)) * 100; // Tick based
-    const leftPercent = (startTicks - (ticksPerBeat * beatsPerBar * barIdx)) / (ticksPerBeat * beatsPerBar) * 100; // Tick based
+    const ticksPerBar = ticksPerBeat * beatsPerBar;
+    const totalTicks = ticksPerBar * props.totalBars;
+    const durationPercent = (durationTicks / (ticksPerBar)) * 100; // Tick based
+    const leftPercent = (startTicks - (ticksPerBar * barIdx)) / ticksPerBar * 100; // Tick based
     const noteHeight = 14;
 
 
@@ -362,8 +364,12 @@ const MultiTrackView = (props) => {
     let widthPercent;
     let boxShadow = "none";
 
-    // 현재 재생중인 note 스타일 처리
-    if (time < currentTimeSec && currentTimeSec <= nextStartTime && barIdx === currentBar) { // 연주중인 음표 빨간색 표시
+    // Note 스타일 처리
+    if (time < currentTimeSec
+      && currentTimeSec <= nextStartTime
+      && Math.floor(startTicks / ticksPerBar) <= currentBar
+      && Math.floor(startTicks + durationTicks / ticksPerBar) >= currentBar
+    ) { // 연주중인 음표 빨간색 표시
       divColor = "#ffbaba";
       borderStyle = `1px solid #eb4b5d`;
     } else if (highlightOn && barIdx >= props.barsToRegen[0] && barIdx <= props.barsToRegen[1]) { // Regenerate 영역 파란색 하이라이트 표시
@@ -381,8 +387,10 @@ const MultiTrackView = (props) => {
     }
 
     // 마지막 음 duration이 경계 넘어가는 경우 예외 처리
-    if (leftPercent + durationPercent > 100) {
-      widthPercent = `${100 - leftPercent}%`;
+    // if (leftPercent + durationPercent > 100) {
+    if (startTicks + durationTicks > totalTicks) {
+      // widthPercent = `${100 - leftPercent}%`;
+      widthPercent = `${(totalTicks - startTicks) / ticksPerBar * 100}%`;
     } else {
       widthPercent = `${durationPercent}%`;
     }
@@ -570,7 +578,7 @@ const MultiTrackView = (props) => {
               totalBars={props.totalBars}
               soloTrack={soloTrack}
               mutedTracks={mutedTracks}
-              instrumentTrack={instrumentObject[idx]}
+              instrumentTrack={props.instrumentObject[idx]}
               regenTrackIdx={props.regenTrackIdx}
               isGenerating={props.isGenerating}
               isAdding={props.isAdding}
