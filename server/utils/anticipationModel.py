@@ -1,7 +1,7 @@
 import transformers
 from transformers import AutoModelForCausalLM
 # from IPython.display import Audio
-# from anticipation import ops
+from anticipation import ops
 from anticipation.sample import generate
 # from anticipation.tokenize import extract_instruments
 from anticipation.convert import events_to_midi,midi_to_events

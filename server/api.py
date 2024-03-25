@@ -226,7 +226,7 @@ async def infill_midi(req: Request, request_json: UploadData):
     logging.info(f"req : {client_ip}")
 
     parsed_json = json.loads(request_json.request_json)
-    infill_bar_idx = parsed_json['bar_idx']
+    infill_bar_idx = int(parsed_json['regenBarIndex'])+1
     encoded_midi = parsed_json['midi']
     decoded_midi = b64decode(encoded_midi)
     
