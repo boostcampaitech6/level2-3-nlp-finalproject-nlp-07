@@ -21,6 +21,7 @@ from utils.generateModel_util import (
     generate_add_8bar_track
 )
 from utils.frontModel_util import initialize_front_model, extract_condition
+from utils.anticipationModel import extend_4bar_to_8bar
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
@@ -140,6 +141,19 @@ async def receive_midi(req: Request, request_json: UploadData):
     add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(add_file_path)
 
+    # mspq, qpm 헤더 정보 저장
+    from utils.anticipationModel import extract_midi_info
+    mspq, qpm = extract_midi_info(recv_file_path)
+    logging.info(f"recv_file : {Score(recv_file_path)}")
+
+    # 트랙 헤더 정보 입력
+    midi_data = Score.from_file(add_file_path)
+    new_tempo_tick = TempoTick(time=0, qpm=qpm, mspq=mspq)
+    midi_data.tempos[0].qpm = qpm
+    midi_data.tempos[0].mspq = mspq
+    midi_data.dump_midi(add_file_path)
+    logging.info(f"add_file : {Score(add_file_path)}")
+
     # modify tempo
     temp_bpm = extract_tempo(recv_file_path)
     logging.info(f"before_temp_bpm : {temp_bpm}")
@@ -162,9 +176,49 @@ async def receive_midi(req: Request, request_json: UploadData):
 
 # Extension : 4마디 -> 8마디 연장 (model3)
 @router.post("/extend_midi/")
-async def extension_midi(req: Request, request_json: UploadData):
+async def extend_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
     logging.info(f"req : {client_ip}")
+    
+    parsed_json = json.loads(request_json.request_json)
+    encoded_midi = parsed_json['midi']
+    decoded_midi = b64decode(encoded_midi)
+    
+    extd_recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_recv.mid")
+    try:
+        # 업로드된 파일을 임시 폴더에 저장
+        with open(extd_recv_file_path, "wb") as temp_file:
+            temp_file.write(decoded_midi)
+        extd_recv_midi = Score(extd_recv_file_path)
+    except Exception as e:
+        return {"status": "failed", "message": str(e)}
+
+    # 4마디 -> 8마디 연장
+    extended_midi = extend_4bar_to_8bar(extd_recv_file_path)
+    extd_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_result.mid")
+    extended_midi.dump_midi(extd_result_path)
+    logging.info(f"생성완료 : {extd_result_path}")
+
+    # 트랙 헤더 정보 저장
+    import mido
+    midi_recv = mido.MidiFile(extd_recv_file_path)
+    midi_header = midi_recv.tracks[0]
+
+    # 트랙 헤더 정보 입력
+    midi_result = mido.MidiFile(extd_result_path)
+    midi_result.tracks.insert(0, midi_header)
+    midi_result.save(extd_result_path)
+
+    # with open(extd_result_path, 'rb') as file:
+    #     # file_content = b64encode(file.read())
+    #     file_content = b64encode(file.read()).decode('utf-8')
+    # return JSONResponse(content={"file_content": file_content})
+
+    with open(extd_result_path, 'rb') as file:
+        file_content = b64encode(file.read())
+    
+    return file_content
+    
 
 # Infill 1마디 교체 (model3)
 @router.post("/infill_midi/")
@@ -172,3 +226,6 @@ async def infill_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
     logging.info(f"req : {client_ip}")
 
+    parsed_json = json.loads(request_json.request_json)
+    encoded_midi = parsed_json['midi']
+    decoded_midi = b64decode(encoded_midi)
