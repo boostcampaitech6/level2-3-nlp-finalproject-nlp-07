@@ -148,7 +148,6 @@ async def receive_midi(req: Request, request_json: UploadData):
 
     # 트랙 헤더 정보 입력
     midi_data = Score.from_file(add_file_path)
-    new_tempo_tick = TempoTick(time=0, qpm=qpm, mspq=mspq)
     midi_data.tempos[0].qpm = qpm
     midi_data.tempos[0].mspq = mspq
     midi_data.dump_midi(add_file_path)
