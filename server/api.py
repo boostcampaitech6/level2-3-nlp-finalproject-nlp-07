@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 from utils.generateModel_util import initialize_generate_model, generate_initial_track, generate_update_track
 from utils.frontModel_util import initialize_front_model, extract_condition
+from utils.anticipationModel import extend_4bar_to_8bar
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
@@ -152,10 +153,35 @@ async def receive_midi(req: Request, request_json: UploadData):
     # return JSONResponse(content={"response": response_dict})
 
 # Extension : 4마디 -> 8마디 연장 (model3)
-@router.post("/extension_midi/")
-async def extension_midi(req: Request, request_json: UploadData):
+@router.post("/extend_midi/")
+async def extend_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
     logging.info(f"req : {client_ip}")
+    
+    parsed_json = json.loads(request_json.request_json)
+    encoded_midi = parsed_json['midi']
+    decoded_midi = b64decode(encoded_midi)
+    
+    extd_recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_recv.mid")
+    try:
+        # 업로드된 파일을 임시 폴더에 저장
+        with open(extd_recv_file_path, "wb") as temp_file:
+            temp_file.write(decoded_midi)
+        extd_recv_midi = Score(extd_recv_file_path)
+    except Exception as e:
+        return {"status": "failed", "message": str(e)}
+    
+    # 4마디 -> 8마디 연장
+    extended_midi = extend_4bar_to_8bar(extd_recv_file_path)
+    extd_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_result.mid")
+    extended_midi.dump_midi(extd_result_path)
+    logging.info(f"생성완료 : {extd_result_path}")
+
+    with open(extd_result_path, 'rb') as file:
+        # file_content = b64encode(file.read())
+        file_content = b64encode(file.read()).decode('utf-8')
+    return JSONResponse(content={"file_content": file_content})
+    
 
 # Infill 1마디 교체 (model3)
 @router.post("/infill_midi/")
@@ -163,3 +189,6 @@ async def infill_midi(req: Request, request_json: UploadData):
     client_ip = req.client.host
     logging.info(f"req : {client_ip}")
 
+    parsed_json = json.loads(request_json.request_json)
+    encoded_midi = parsed_json['midi']
+    decoded_midi = b64decode(encoded_midi)
