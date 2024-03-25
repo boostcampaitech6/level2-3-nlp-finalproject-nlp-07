@@ -52,4 +52,30 @@ def extend_4bar_to_8bar(midi_path):
     # extended_midi.tempos.append(new_tempo_tick)
 
     return extended_midi
+
+def infill_at(midi_path, bar_idx, num_of_bars = 8):
+    if bar_idx > num_of_bars or bar_idx < 2:
+        print("bar_idx must be in range 2 ~ 8")
+        raise ValueError("bar_idx must be in range 2 ~ 8")
     
+    length = 60 / 120 * 4 * 4
+    length_per_bar = (length/num_of_bars)*(num_of_bars/4) # 사실 항상 2임
+    mspq, qpm = extract_midi_info(midi_path)
+    events = pre_processing(midi_path)
+    history = events.copy()
+
+    # e.g. 0 ~ 4마디                    
+    segment = ops.clip(history , 0, length_per_bar*(bar_idx-1) , clip_duration=False)
+# e.g. 5 ~ 8마디
+    anticipated = [CONTROL_OFFSET + tok for tok in ops.clip(history , length_per_bar*bar_idx, length*num_of_bars/4, clip_duration=False)] 
+
+    # 5번째 마디 생성 & 맘에 안들 경우, 여기서부터 re-run
+    inpainted = generate(model, length_per_bar*(bar_idx-1), length_per_bar*bar_idx, inputs=segment, controls=anticipated, top_p=.95)
+    proposal = ops.combine(inpainted, anticipated)
+    proposal_midi = events_to_midi(proposal)
+    proposal_midi.save('./anticipation-infilled.mid')
+    infilled_midi = Score(Path('./anticipation-infilled.mid'))
+    # new_tempo_tick = TempoTick(time=0, qpm=qpm, mspq=mspq)
+    # infilled_midi.tempos.append(new_tempo_tick)
+    
+    return infilled_midi

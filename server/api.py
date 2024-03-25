@@ -21,7 +21,7 @@ from utils.generateModel_util import (
     generate_add_8bar_track
 )
 from utils.frontModel_util import initialize_front_model, extract_condition
-from utils.anticipationModel import extend_4bar_to_8bar
+from utils.anticipationModel import extend_4bar_to_8bar, infill_at
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
@@ -226,5 +226,40 @@ async def infill_midi(req: Request, request_json: UploadData):
     logging.info(f"req : {client_ip}")
 
     parsed_json = json.loads(request_json.request_json)
+    infill_bar_idx = parsed_json['bar_idx']
     encoded_midi = parsed_json['midi']
     decoded_midi = b64decode(encoded_midi)
+    
+    infill_recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_recv.mid")
+    try:
+        with open(infill_recv_file_path, "wb") as temp_file:
+            temp_file.write(decoded_midi)
+        infill_recv_midi = Score(infill_recv_file_path)
+    except Exception as e:
+        return {"status": "failed", "message": str(e)}
+
+    # 1마디 교체
+    infill_midi = infill_at(infill_recv_file_path, infill_bar_idx)
+    infill_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_result.mid")
+    infill_midi.dump_midi(infill_result_path)
+    logging.info(f"생성완료 : {infill_result_path}")
+
+    # 트랙 헤더 정보 저장
+    import mido
+    midi_recv = mido.MidiFile(infill_recv_file_path)
+    midi_header = midi_recv.tracks[0]
+
+    # 트랙 헤더 정보 입력
+    midi_result = mido.MidiFile(infill_result_path)
+    midi_result.tracks.insert(0, midi_header)
+    midi_result.save(infill_result_path)
+
+    # with open(extd_result_path, 'rb') as file:
+    #     # file_content = b64encode(file.read())
+    #     file_content = b64encode(file.read()).decode('utf-8')
+    # return JSONResponse(content={"file_content": file_content})
+
+    with open(infill_result_path, 'rb') as file:
+        file_content = b64encode(file.read())
+    
+    return file_content
