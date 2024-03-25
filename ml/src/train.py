@@ -109,7 +109,7 @@ def main(args):
     
     # Get the output directory with timestamp.
     OUTPUT_DIR = os.path.join(BASE_DIR, f"..{args.save_path}")
-    save_path = OUTPUT_DIR + f"/{args.model}-{args.dataset}-{args.tokenizer}/{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    save_path = OUTPUT_DIR + f"/{args.dataset}-{args.tokenizer}/{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
     # Commented parameters correspond to the small model
     trainer_config = {
@@ -152,7 +152,7 @@ def main(args):
 if __name__ == '__main__':
     print('===== Training model... =====')
     
-    parser = set_arguments('default')
+    parser = set_arguments('deafult')
     args = parser.parse_args()
     
     print('==== arguments ====')
