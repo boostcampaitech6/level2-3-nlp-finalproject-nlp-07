@@ -50,9 +50,11 @@ const MidiView = (props) => {
     const [regenTrigger, setRegenTrigger] = useState(0);
     const [isAdding, setIsAdding] = useState(false);
     const [isExtending, setIsExtending] = useState(false);
+    const [isInfilling, setIsInfilling] = useState(false);
     const [totalBars, setTotalBars] = useState(4);
     const [barsToRegen, setBarsToRegen] = useState([0, 3]);
     const [currentInstruments, setCurrentInstruments] = useState([]);
+    const [infillHighlightBar, setInfillHighlightBar] = useState();
 
 
     // 서버에서 생성해서 반환해준 미디 파일을 멀티트랙 뷰로 넘겨줌
@@ -176,7 +178,7 @@ const MidiView = (props) => {
                 "midi": base64Data,
                 "regenBarIndex": regenBarIndex,
             })
-            setIsAdding(true);
+            setIsInfilling(true);
         }
 
         // Make the POST request using fetch
@@ -254,8 +256,9 @@ const MidiView = (props) => {
                 }
                 // Start reading the response body
                 readResponseBody(reader);
-                setIsAdding(false)
-                setIsExtending(false)
+                setIsAdding(false);
+                setIsExtending(false);
+                setIsInfilling(false);
             })
             .catch(error => {
                 props.setShowErrorModal(true);
@@ -287,6 +290,7 @@ const MidiView = (props) => {
     const handleClickInfill = (barIndex) => {
         console.log(`bar ${barIndex}'s all tracks will be regenerated`);
         sendMidiToServerLambda({ operateType: "infill", midi: midiFile, regenBarIndex: barIndex });
+        setInfillHighlightBar(barIndex);
     }
 
     const handleDownloadMidi = () => {
@@ -356,8 +360,12 @@ const MidiView = (props) => {
                         regenTrackIdx={regenTrackIdx}
                         barsToRegen={barsToRegen}
                         isExtending={isExtending}
+                        isInfilling={isInfilling}
+                        infillHighlightBar={infillHighlightBar}
                         isGenerating={props.isGenerating}
                         handleClickInfill={handleClickInfill}
+                        setIsInfilling={setIsInfilling}
+                        setInfillHighlightBar={setInfillHighlightBar}
                         setTotalBars={setTotalBars}
                         setBarsToRegen={setBarsToRegen}
                         setMidiFile={setMidiFile}
@@ -372,7 +380,7 @@ const MidiView = (props) => {
                                     className="float-start"
                                     variant="outline-dark"
                                     onClick={handleDownloadMidi}
-                                    disabled={props.isGenerating || isAdding}
+                                    disabled={props.isGenerating || isAdding || isExtending || isInfilling}
                                 >
                                     Download Current MIDI
                                 </Button>
@@ -401,13 +409,13 @@ const MidiView = (props) => {
                                     <Button
                                         variant="outline-primary"
                                         onClick={handleClickAddInst}
-                                        disabled={props.isGenerating || isAdding || isExtending}
+                                        disabled={props.isGenerating || isAdding || isExtending || isInfilling}
                                     >
                                         {isAdding ? "Adding..." : "Add Inst"}
                                     </Button>
                                 </ButtonGroup>
                                 <Button
-                                    disabled={totalBars === 8 || isExtending || isAdding}
+                                    disabled={totalBars === 8 || isExtending || isAdding || isInfilling}
                                     variant="outline-dark"
                                     className="float-end me-2"
                                     onClick={handleClickExtend}
