@@ -10,6 +10,7 @@ import Col from "react-bootstrap/Col";
 import Button from "react-bootstrap/Button";
 import ToggleButton from 'react-bootstrap/ToggleButton';
 import ButtonGroup from "react-bootstrap/ButtonGroup";
+import Spinner from "react-bootstrap/Spinner"
 
 import Soundfont from "soundfont-player";
 import * as Tone from "tone";
@@ -265,16 +266,36 @@ const MultiTrackView = (props) => {
         onMouseLeave={() => { setInfillBarIdx(null) }}
         onClick={() => { props.handleClickInfill(index) }}
       >
-        {infillBarIdx === index ?
-          <div>
-            <span style={{ width: "10%" }}>
-              {index + 1}
-            </span>
-            <span style={{ color: "white", fontWeight: "bold", textAlign: "center", display: "inline-block", width: "90%", textAlign: "center" }}>
-              ↺
-            </span>
-          </div> :
-          <span>{index + 1}</span>}
+        {
+          props.infillHighlightBar === index && props.isInfilling ?
+            <div>
+              <span>{index + 1}</span>
+              <span style={{ color: "white", fontWeight: "bold", textAlign: "center", display: "inline-block", width: "90%", textAlign: "center" }}>
+                <Spinner
+                  // size="sm"
+                  className="m-0 p-0"
+                  style={{ width: '0.8rem', height: '0.8rem', borderWidth: '2px', marginLeft: '5px', display: props.isInfilling ? 'inline-block' : 'none' }}
+                  variant="light"
+                  animation="border"
+                  role="status"
+                >
+                  <span className="visually-hidden">Loading...</span>
+                </Spinner>
+              </span>
+            </div>
+            :
+            infillBarIdx === index ?
+              <div>
+                <span style={{ width: "10%" }}>
+                  {index + 1}
+                </span>
+                <span style={{ color: "white", fontWeight: "bold", textAlign: "center", display: "inline-block", width: "90%", textAlign: "center" }}>
+                  ↺
+                </span>
+              </div>
+              :
+              <span>{index + 1}</span>
+        }
       </div>
     )
   }
@@ -348,6 +369,9 @@ const MultiTrackView = (props) => {
     } else if (highlightOn && barIdx >= props.barsToRegen[0] && barIdx <= props.barsToRegen[1]) { // Regenerate 영역 파란색 하이라이트 표시
       divColor = "#e3e5fc";
       borderStyle = `1px solid #a4a7fc`;
+    } else if (props.isInfilling && barIdx == props.infillHighlightBar) { // Bar Infill 진행중인 노트 회색 음영 처리
+      divColor = "#d9d9d9";
+      borderStyle = `1px solid #949494`;
     } else if (barIdx === infillBarIdx) { // Bar Infill 영역 파란색 하이라이트 표시
       divColor = "#e3e5fc";
       borderStyle = `1px solid #a4a7fc`;
