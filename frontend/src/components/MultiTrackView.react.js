@@ -32,6 +32,7 @@ const audioContext = new AudioContext();
 const MultiTrackView = (props) => {
   const [midiFile, setMidiFile] = useState();
   const [playing, setPlaying] = useState(false);
+  const [playingEight, setPlayingEight] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [beatsPerBar, setBeatsPerBar] = useState(4);
   const [ticksPerBeat, setTicksPerBeat] = useState(8);
@@ -48,7 +49,7 @@ const MultiTrackView = (props) => {
   // currentTime 업데이트
   useEffect(() => {
     let intervalId;
-    if (playing) {
+    if (playing || playingEight) {
       intervalId = setInterval(() => {
         setCurrentTime((prev) => prev + 100);
       }, 100);
@@ -56,7 +57,7 @@ const MultiTrackView = (props) => {
     return () => {
       clearInterval(intervalId);
     };
-  }, [playing]);
+  }, [playing, playingEight]);
 
   // midiFile prop 내려오면 멀티트랙으로 적용시키기
   useEffect(() => {
@@ -194,7 +195,7 @@ const MultiTrackView = (props) => {
 
   const playMidi = () => {
     // const synths = [];
-    if (!playing && midiFile) {
+    if (!playingEight && midiFile) {
       const now = Tone.now();
 
       midiFile.tracks.forEach((track, idx) => {
@@ -233,6 +234,8 @@ const MultiTrackView = (props) => {
         const synth = synths.shift();
         synth.disconnect();
       }
+      setCurrentTime(0);
+      setPlayingEight(false);
     }
   };
 
@@ -303,16 +306,22 @@ const MultiTrackView = (props) => {
 
   // Event Handlers
   const handleClickPlay = () => {
-    setPlaying((prev) => !prev);
+    // setPlaying((prev) => !prev);
+    setPlayingEight((prev) => !prev);
     playMidi();
   };
   const handleClickRewind = () => {
-    currentTime - msPerBeat > 0 && setCurrentTime((prev) => prev - msPerBeat);
+    const msPerBar = msPerBeat * beatsPerBar;
+    currentTime - msPerBeat > 0 &&
+      // setCurrentTime((prev) => prev - msPerBeat * beatsPerBar);
+      setCurrentTime((prev) => (Math.ceil(prev / msPerBar) - 1) * msPerBar);
   };
 
   const handleClickForward = () => {
+    const msPerBar = msPerBeat * beatsPerBar;
     currentTime + msPerBeat < totalMs &&
-      setCurrentTime((prev) => prev + msPerBeat);
+      // setCurrentTime((prev) => prev + msPerBeat * beatsPerBar);
+      setCurrentTime((prev) => (Math.floor(prev / msPerBar) + 1) * msPerBar);
   };
 
   const handleClickBeginning = () => {
@@ -457,7 +466,7 @@ const MultiTrackView = (props) => {
           <Button
             variant="dark"
             onClick={handleClickPlayInstrument}
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playingEight}
           >
             {playing ? "PAUSE" : "PLAY"}
           </Button>
@@ -465,7 +474,7 @@ const MultiTrackView = (props) => {
             className="ms-2"
             variant="dark"
             onClick={handleClickStopInstrument}
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playingEight}
           >
             ■
           </Button>
@@ -473,7 +482,7 @@ const MultiTrackView = (props) => {
             className="ms-2"
             variant="dark"
             onClick={handleClickBeginning}
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playing || playingEight}
           >
             ◀◀
           </Button>
@@ -481,7 +490,7 @@ const MultiTrackView = (props) => {
             className="ms-2"
             variant="dark"
             onClick={handleClickRewind}
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playing || playingEight}
           >
             ◀
           </Button>
@@ -489,7 +498,7 @@ const MultiTrackView = (props) => {
             className="ms-2"
             variant="dark"
             onClick={handleClickForward}
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playing || playingEight}
           >
             ▶
           </Button>
@@ -502,12 +511,12 @@ const MultiTrackView = (props) => {
             ▶▶
           </Button> */}
           <Button
-            disabled={props.isGenerating}
+            disabled={props.isGenerating || playing}
             className="ms-2 float-middle"
             variant="dark"
             onClick={handleClickPlay}
           >
-            {playing ? "PAUSE" : "PLAY 8bit"}
+            {playingEight ? "STOP" : "PLAY 8bit"}
           </Button>
           <ButtonGroup
             className="float-end"
