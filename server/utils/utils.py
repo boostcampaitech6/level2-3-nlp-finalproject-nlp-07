@@ -81,3 +81,22 @@ def extract_tempo(midi_file_path):
     except Exception as e:
         print(f"Error: {e}")
         return None
+    
+def adjust_ticks_per_beat(midi_file_path, new_ticks_per_beat):
+    # MIDI 파일 열기
+    mid = mido.MidiFile(midi_file_path)
+
+    # 현재의 ticks_per_beat 값을 확인
+    current_ticks_per_beat = mid.ticks_per_beat
+
+    # 각 트랙에서 MIDI 이벤트의 시간 값을 조정하여 새로운 ticks_per_beat 값에 맞게 수정
+    for track in mid.tracks:
+        for msg in track:
+            # 시간 값을 새로운 ticks_per_beat 값에 맞게 조정
+            msg.time = int(msg.time * (new_ticks_per_beat / current_ticks_per_beat))
+
+    # 수정된 ticks_per_beat 값을 설정
+    mid.ticks_per_beat = new_ticks_per_beat
+
+    # 수정된 MIDI 파일 저장
+    mid.save(midi_file_path)

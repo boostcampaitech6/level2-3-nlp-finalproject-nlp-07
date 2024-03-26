@@ -22,7 +22,7 @@ from utils.generateModel_util import (
 )
 from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.anticipationModel import extend_4bar_to_8bar, infill_at
-from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo
+from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo, adjust_ticks_per_beat
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
 
@@ -82,7 +82,7 @@ async def generate_midi(req: Request, text_data: TextData):
     
     # generate model - midi track 생성
     midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, top_tracks=5, temperature=0.8)
-
+    
     # modify tempo
     temp_bpm = generate_tempo(text, condition)
     new_tempo_tick = TempoTick(time=0, qpm=temp_bpm)
@@ -90,7 +90,11 @@ async def generate_midi(req: Request, text_data: TextData):
 
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)
-    logging.info(f"생성완료 : {file_path}")
+
+    # modify ticks per beat
+    adjust_ticks_per_beat(file_path, 50)
+
+    logging.info(f"generate_midi : {Score(file_path)}")
 
     with open(file_path, 'rb') as file:
         # file_content = b64encode(file.read())
@@ -128,8 +132,8 @@ async def receive_midi(req: Request, request_json: UploadData):
             "error": str(e)
         }
         return JSONResponse(content={"response": response})
+    logging.info(f"regenPart : {regenPart}, instnum : {instnum}, emotion: {emotion}, tempo: {tempo}, genre: {genre}")
     
-    logging.info(f"instnum : {instnum}, emotion: {emotion}, tempo: {tempo}, genre: {genre}")
     # update midi
     if regenPart == "default":
         midi_data = generate_updated_midi(generate_model, generate_tokenizer, midi, instnum, temperature=0.8)
@@ -141,37 +145,31 @@ async def receive_midi(req: Request, request_json: UploadData):
     add_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_add.mid")
     midi_data.dump_midi(add_file_path)
 
+    # modify ticks per beat
+    adjust_ticks_per_beat(add_file_path, 50)
+
     # mspq, qpm 헤더 정보 저장
     from utils.anticipationModel import extract_midi_info
     mspq, qpm = extract_midi_info(recv_file_path)
-    logging.info(f"recv_file : {Score(recv_file_path)}")
 
     # 트랙 헤더 정보 입력
     midi_data = Score.from_file(add_file_path)
     midi_data.tempos[0].qpm = qpm
     midi_data.tempos[0].mspq = mspq
     midi_data.dump_midi(add_file_path)
-    logging.info(f"add_file : {Score(add_file_path)}")
 
     # modify tempo
     temp_bpm = extract_tempo(recv_file_path)
-    logging.info(f"before_temp_bpm : {temp_bpm}")
     if temp_bpm != None:
         modify_tempo(add_file_path, temp_bpm)
         temp_bpm = extract_tempo(add_file_path)
-        logging.info(f"after_temp_bpm : {temp_bpm}")
+
+    logging.info(f"upload_midi : {Score(add_file_path)}")
 
     with open(add_file_path, 'rb') as file:
         file_content = b64encode(file.read())
     
     return file_content
-
-    # response_dict = {
-    #     "success" : True,
-    #     "content" : {"file_content": file_content}
-    # }
-
-    # return JSONResponse(content={"response": response_dict})
 
 # Extension : 4마디 -> 8마디 연장 (model3)
 @router.post("/extend_midi/")
@@ -196,7 +194,6 @@ async def extend_midi(req: Request, request_json: UploadData):
     extended_midi = extend_4bar_to_8bar(extd_recv_file_path)
     extd_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_result.mid")
     extended_midi.dump_midi(extd_result_path)
-    logging.info(f"생성완료 : {extd_result_path}")
 
     # 트랙 헤더 정보 저장
     import mido
@@ -208,10 +205,7 @@ async def extend_midi(req: Request, request_json: UploadData):
     midi_result.tracks.insert(0, midi_header)
     midi_result.save(extd_result_path)
 
-    # with open(extd_result_path, 'rb') as file:
-    #     # file_content = b64encode(file.read())
-    #     file_content = b64encode(file.read()).decode('utf-8')
-    # return JSONResponse(content={"file_content": file_content})
+    logging.info(f"extend_midi : {Score(extd_result_path)}")
 
     with open(extd_result_path, 'rb') as file:
         file_content = b64encode(file.read())
@@ -242,7 +236,6 @@ async def infill_midi(req: Request, request_json: UploadData):
     infill_midi = infill_at(infill_recv_file_path, infill_bar_idx)
     infill_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_result.mid")
     infill_midi.dump_midi(infill_result_path)
-    logging.info(f"생성완료 : {infill_result_path}")
 
     # 트랙 헤더 정보 저장
     import mido
@@ -254,10 +247,7 @@ async def infill_midi(req: Request, request_json: UploadData):
     midi_result.tracks.insert(0, midi_header)
     midi_result.save(infill_result_path)
 
-    # with open(extd_result_path, 'rb') as file:
-    #     # file_content = b64encode(file.read())
-    #     file_content = b64encode(file.read()).decode('utf-8')
-    # return JSONResponse(content={"file_content": file_content})
+    logging.info(f"infill_midi : {Score(infill_result_path)}")
 
     with open(infill_result_path, 'rb') as file:
         file_content = b64encode(file.read())
