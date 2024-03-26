@@ -2,6 +2,7 @@ import transformers
 from transformers import AutoModelForCausalLM
 # from IPython.display import Audio
 from anticipation import ops
+from anticipation.ops import get_instruments
 from anticipation.sample import generate
 # from anticipation.tokenize import extract_instruments
 from anticipation.convert import events_to_midi,midi_to_events
@@ -13,9 +14,13 @@ from symusic import Score
 from symusic.core import TempoTick
 from pathlib import Path
 import os
+from settings import TEMP_DIR
 
 SMALL_MODEL = 'stanford-crfm/music-small-800k'   # slower inference, better sample quality
 model = AutoModelForCausalLM.from_pretrained(SMALL_MODEL).cuda()
+
+def get_instruments_list(proposal):
+    return list(get_instruments(proposal).keys())
 
 # 미디파일 정보 저장 함수
 def extract_midi_info(MIDI_FILE):   
@@ -42,11 +47,14 @@ def extend_4bar_to_8bar(midi_path):
     history = events.copy()
     n = length
     top_p = 0.9
-    
     proposal = generate(model, start_time=length, end_time=length+n, inputs=history, top_p=top_p)
+    inst_num = get_instruments_list(history)
+    proposal = ops.delete(proposal, lambda token: (token[2]-NOTE_OFFSET) // 2**7 not in inst_num)
     proposal_midi = events_to_midi(proposal)
-    proposal_midi.save('./anticipation-extended.mid')
-    extended_midi = Score(Path('./anticipation-extended.mid'))
+
+    temp_file_path = os.path.join(TEMP_DIR, "anticipation-extended.mid")
+    proposal_midi.save(temp_file_path)
+    extended_midi = Score(temp_file_path)
     
     # new_tempo_tick = TempoTick(time=0, qpm=qpm, mspq=mspq)
     # extended_midi.tempos.append(new_tempo_tick)
@@ -66,15 +74,17 @@ def infill_at(midi_path, bar_idx, num_of_bars = 8):
 
     # e.g. 0 ~ 4마디                    
     segment = ops.clip(history , 0, length_per_bar*(bar_idx-1) , clip_duration=False)
-# e.g. 5 ~ 8마디
+    # e.g. 5 ~ 8마디
     anticipated = [CONTROL_OFFSET + tok for tok in ops.clip(history , length_per_bar*bar_idx, length*num_of_bars/4, clip_duration=False)] 
 
     # 5번째 마디 생성 & 맘에 안들 경우, 여기서부터 re-run
     inpainted = generate(model, length_per_bar*(bar_idx-1), length_per_bar*bar_idx, inputs=segment, controls=anticipated, top_p=.95)
     proposal = ops.combine(inpainted, anticipated)
     proposal_midi = events_to_midi(proposal)
-    proposal_midi.save('./anticipation-infilled.mid')
-    infilled_midi = Score(Path('./anticipation-infilled.mid'))
+
+    temp_file_path = os.path.join(TEMP_DIR, "anticipation-infilled.mid")
+    proposal_midi.save(temp_file_path)
+    infilled_midi = Score(temp_file_path)
     # new_tempo_tick = TempoTick(time=0, qpm=qpm, mspq=mspq)
     # infilled_midi.tempos.append(new_tempo_tick)
     
