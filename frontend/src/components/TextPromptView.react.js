@@ -301,7 +301,7 @@ const TextPromptView = (props) => {
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      handleClickGenerate()
+                      // handleClickGenerate()
                     } else if (event.key === "Escape") {
                       setPrompt("")
                     }

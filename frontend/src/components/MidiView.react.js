@@ -312,6 +312,9 @@ const MidiView = (props) => {
             .catch(error => {
                 props.setShowErrorModal(true);
                 props.setErrorLog(error.message);
+                setIsAdding(false);
+                setIsExtending(false);
+                setIsInfilling(false);
             });
     }
 
@@ -384,7 +387,7 @@ const MidiView = (props) => {
                     Generated Music
                 </Card.Header>
                 <Card.Body>
-                    <div
+                    {/* <div
                         onDrop={handleFileDrop}
                         onDragOver={handleDragOver}
                         style={{
@@ -401,7 +404,7 @@ const MidiView = (props) => {
                             <img src="./inst_icons/disc.png" width="25px" className="me-2" />
                             {fileName}
                         </span>
-                    </div>
+                    </div> */}
                     <MultiTrackView
                         midiFile={midiFile}
                         totalBars={totalBars}
