@@ -80,6 +80,8 @@ def infill_at(midi_path, bar_idx, num_of_bars = 8):
     # 5번째 마디 생성 & 맘에 안들 경우, 여기서부터 re-run
     inpainted = generate(model, length_per_bar*(bar_idx-1), length_per_bar*bar_idx, inputs=segment, controls=anticipated, top_p=.95)
     proposal = ops.combine(inpainted, anticipated)
+    inst_num = get_instruments_list(history)
+    proposal = ops.delete(proposal, lambda token: (token[2]-NOTE_OFFSET) // 2**7 not in inst_num)
     proposal_midi = events_to_midi(proposal)
 
     temp_file_path = os.path.join(TEMP_DIR, "anticipation-infilled.mid")
