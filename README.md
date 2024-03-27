@@ -1,16 +1,26 @@
 ### 디지털 악보와 언어 모델을 이용한 음악 생성 프로젝트
 
-데모 앱 링 - https://codeplay-ai.netlify.app
+<table>
+  <tr>
+    <td style="text-align:left;">데모 앱 링 - https://codeplay-ai.netlify.app</td>
+    <td style="text-align:center;" rowspan="2">
+      <img src="./etc/logo_codeplay.png" width=240 align="right" width=80>    
+    </td>  
+  </tr>
+  <tr>
+    <td style="text-align:left;">시연 영상 링크 - https://youtu.be/PThn811Lli8</td>
+  </tr>
+</table>
 
-시연 영상 링크 - https://youtu.be/PThn811Lli8
+      
 
-<img src="./etc/logo_codeplay.png" width=240>
+
 
 ## 팀원 소개
 
 ---
 
-| [정지영](https://github.com/patcasso)                                                     | [양성현](https://github.com/seohyunee22)                                                                                      | [이상경](https://github.com/sanggank)                       | [정종관](https://github.com/devBuzz142)            | [이승백](https://github.com/tmdqor) | [이주용](https://github.com/nachalsa)                  |
+| [정지영](https://github.com/patcasso)                                                     | [양서현](https://github.com/seohyunee22)                                                                                      | [이상경](https://github.com/sanggank)                       | [정종관](https://github.com/devBuzz142)            | [이승백](https://github.com/tmdqor) | [이주용](https://github.com/nachalsa)                  |
 | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------ |
 | - 팀장 <br> - 프로젝트 기획 <br> - 모델 조사 및 학습 베이스라인 코드 <br> - 웹 프론트엔드 | - 데이터셋 조사 및 수집 <br> - 토크나이징 방식 비교 및 실험 <br> - 생성길이 연장 및 마디 별 재생성 기능, 호환성 (Model3) 구현 | - 데이터 생성 및 수집 <br> - 텍스트 분류 모델 (Model1) 제작 | - 데이터 전처리 <br> - 음악 생성 모델(Model2) 학습 | - 데이터 가공 <br> - 백엔드 제작    | - 토큰화 방식 개선 <br> - 생성방식 다각화 구상 및 실험 |
 
