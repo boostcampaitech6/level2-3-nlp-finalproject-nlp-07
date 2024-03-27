@@ -178,6 +178,7 @@ const MidiView = (props) => {
             bodyData = JSON.stringify({
                 "midi": base64Data,
                 "regenBarIndex": regenBarIndex,
+                "totalBars":  totalBars,
             })
             setIsInfilling(true);
         }

@@ -107,6 +107,7 @@ const MultiTrackView = (props) => {
           });
         });
       })
+      // console.log(`instrumentObject: ${JSON.stringify(props.instrumentObject)}`)
     }
   }, [props.midiFile]);
 

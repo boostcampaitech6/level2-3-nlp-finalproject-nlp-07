@@ -6,7 +6,7 @@ import NavDropdown from 'react-bootstrap/NavDropdown';
 function NavBar(props) {
     return (
         <Navbar style={{ backgroundColor: "#A181FD" }} data-bs-theme="dark">
-            <Container className="p-1 ms-4">
+            <Container className="p-1 ms-4 me-3" fluid>
                 <a href="/">
                     <img
                         src="./../../logo192.png"
@@ -49,9 +49,9 @@ function NavBar(props) {
                         style={{ textAlign: "right", fontSize: "0.6em" }}
                         className="m-0 p-0"
                     >
-                        {/* <span>codeplay@codeplay.com</span> */}
-                        {/* <br /> */}
-                        {/* <span>© 2024 NLP07-CodePlay CO. ALL RIGHTS RESERVED</span> */}
+                        <span>codeplay.nlp@gmail.com</span>
+                        <br />
+                        <span>© 2024 NLP07-CodePlay CO. ALL RIGHTS RESERVED</span>
                     </Navbar.Text>
                 </Navbar.Collapse>
 
