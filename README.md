@@ -1,18 +1,32 @@
-### 디지털 악보와 언어 모델을 이용한 음악 생성 프로젝트
+## 디지털 악보와 언어 모델을 이용한 음악 생성 프로젝트
 
 <table>
   <tr>
-    <td style="text-align:left;">데모 앱 링 - https://codeplay-ai.netlify.app</td>
-    <td style="text-align:center;" rowspan="2">
-      <img src="./etc/logo_codeplay.png" width=240 align="right" width=80>    
+    <td style="text-align:left;" width=420>
+       <p align="center">
+          <b>데모 앱 링크 - </b>https://codeplay-ai.netlify.app
+       </p>
+    </td>
+    <td style="text-align:center; border-color:white" rowspan="3" width=660>
+      <p align="center">
+        <a href="https://codeplay-ai.netlify.app">
+        <img src="./etc/logo_codeplay.png" width=240>    
+        </a>
+      </p>
     </td>  
   </tr>
   <tr>
-    <td style="text-align:left;">시연 영상 링크 - https://youtu.be/PThn811Lli8</td>
+  </tr>
+  <tr>
+      <td style="text-align:left;">
+        <p align="center">
+          <b>시연 영상 링크 - </b>https://youtu.be/PThn811Lli8
+        </p>
+      </td>
   </tr>
 </table>
 
-      
+
 
 
 
@@ -20,9 +34,62 @@
 
 ---
 
-| [정지영](https://github.com/patcasso)                                                     | [양서현](https://github.com/seohyunee22)                                                                                      | [이상경](https://github.com/sanggank)                       | [정종관](https://github.com/devBuzz142)            | [이승백](https://github.com/tmdqor) | [이주용](https://github.com/nachalsa)                  |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------ |
-| - 팀장 <br> - 프로젝트 기획 <br> - 모델 조사 및 학습 베이스라인 코드 <br> - 웹 프론트엔드 | - 데이터셋 조사 및 수집 <br> - 토크나이징 방식 비교 및 실험 <br> - 생성길이 연장 및 마디 별 재생성 기능, 호환성 (Model3) 구현 | - 데이터 생성 및 수집 <br> - 텍스트 분류 모델 (Model1) 제작 | - 데이터 전처리 <br> - 음악 생성 모델(Model2) 학습 | - 데이터 가공 <br> - 백엔드 제작    | - 토큰화 방식 개선 <br> - 생성방식 다각화 구상 및 실험 |
+<table>
+  <tr></tr>
+  <tr>
+    <td width=180>
+       <p align="center">
+         <a href="https://github.com/patcasso"><b>정지영</b></a>
+       </p>
+    </td>
+    <td width=210>
+      <p align="center">
+        <a href="https://github.com/seohyunee22"><b>양서현</b></a>
+      </p>
+    </td>
+    <td width=170>
+      <p align="center">
+        <a href="https://github.com/sanggank"><b>이상경</b></a>
+      </p>
+    </td>
+    <td width=170>
+      <p align="center">
+        <a href="https://github.com/devBuzz142"><b>정종관</b></a>
+      </p>
+    </td>
+    <td width=160>
+      <p align="center">
+        <a href="https://github.com/tmdqor"><b>이승백</b></a>
+      </p>
+    </td>
+    <td width=190>
+      <p align="center">
+        <a href="https://github.com/nachalsa"><b>이주용</b></a>
+      </p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+       - 팀장 <br> - 프로젝트 기획 <br> - 모델 조사 및 학습 <br>  베이스라인 코드 <br> - 웹 프론트엔드
+    </td>
+    <td>
+      - 데이터셋 조사 및 수집 <br> - 토크나이징 방식 비교 및 실험 <br> - 길이 연장 모델 (Model3) 구현
+    </td>
+    <td>
+      - 데이터 생성 및 수집 <br> - 텍스트 분류 모델 (Model1) 제작
+    </td>
+    <td>
+      - 데이터 전처리 <br> - 음악 생성 모델(Model2) 학습
+    </td>
+    <td>
+      - 데이터 가공 <br> - 백엔드 제작
+    </td>
+    <td>
+      - 토큰나이징 방식 개선 <br> - 생성방식 다각화 구상 및 실험
+    </td>
+  </tr>
+</table>
+
 
 ## 개요
 
@@ -149,4 +216,7 @@ https://huggingface.co/blog/juancopi81/using-hugging-face-to-train-a-gpt-2-model
 
 [8]  AI Hub 음악 유사성 판별 데이터. https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71544
 
-<img src="./etc/logo_codeplay.png">
+<br><br>
+<p align="center">
+  <img src="./etc/logo_codeplay.png" width=300>
+</p>
