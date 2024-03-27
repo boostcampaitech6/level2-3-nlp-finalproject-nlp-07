@@ -86,7 +86,7 @@ def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperatur
         logging.info("-"*5 + f"track_counter : {track_counter}" + "-"*5)
         if i == 0:
             logging.info(f"track count (start, end)")
-            input_text = BOS_TOKEN + " Genre_" + genre + " Emotion_" + emotion + " Tempo_" + tempo + " Track_Start"
+            input_text = BOS_TOKEN + " Genre_" + genre + " Emotion_" + emotion + " Track_Start"
             # input_text = BOS_TOKEN + " Genre_" + genre + " Emotion_" + emotion + " Tempo_" + tempo
             current_track_ids = torch.empty(1, 0).to(DEVICE)
             logging.info(f"input : {input_text}")
@@ -105,8 +105,6 @@ def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperatur
             break
     
     mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
-    mmm_tokens_ids = mmm_tokens_ids[:3] + mmm_tokens_ids[4:] # remove tempo token at index 3
-    
     # logging.info(mmm_tokens_ids)
     midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
     return midi_data
