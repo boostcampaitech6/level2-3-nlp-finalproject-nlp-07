@@ -1,210 +1,284 @@
-## 디지털 악보와 언어 모델을 이용한 음악 생성 프로젝트
+![header](https://capsule-render.vercel.app/api?type=waving&height=200&color=993afebd&text=CodePlay!&fontSize=50&fontAlignY=28&desc=디지털%20악보와%20언어모델을%20이용한%20음악%20생성%20프로젝트&descAlignY=51&fontColor=ffffff)
 
-<table>
-  <tr>
-    <td style="text-align:left;" width=420>
-       <p align="center">
-          <b>데모 앱 링크 - </b>https://codeplay-ai.netlify.app
-       </p>
-    </td>
-    <td style="text-align:center; border-color:white" rowspan="3" width=660>
+ 
+<!--## <p align="center">디지털 악보와 언어 모델을 이용한 음악 생성 프로젝트: CodePlay!</p>-->
+
+<td style="text-align:center; border-color:white" rowspan="3" width=660>
       <p align="center">
         <a href="https://codeplay-ai.netlify.app">
-        <img src="./etc/logo_codeplay.png" width=240>    
+        <img src="etc\logo_codeplay.png" width=240>    
         </a>
       </p>
     </td>  
-  </tr>
-  <tr>
-  </tr>
-  <tr>
-      <td style="text-align:left;">
-        <p align="center">
-          <b>시연 영상 링크 - </b>https://youtu.be/PThn811Lli8
-        </p>
-      </td>
-  </tr>
-</table>
+<br>
+
+### <p align="center"><code>CodePlay!</code>는</p>
+<p align="center">사용자가 감정이나 생각을 <code>텍스트</code>로 표현하면</p>
+<p align="center">이를 기반으로 음악을 생성하여</p> 
+<p align="center"><code>편집 가능</code>한 <code>디지털 악보</code>로 제공하는 서비스입니다.</p>
+
+
+<br>
 
 
 
 
 
-## 팀원 소개
 
----
-
-<table>
-  <tr></tr>
-  <tr>
-    <td width=180>
-       <p align="center">
-         <a href="https://github.com/patcasso"><b>정지영</b></a>
-       </p>
+<table align="center">
+  <tr height="8px">
+    <td align="center" style="text-align:center;" width="80px">
+      <b>데모 앱</b>
     </td>
-    <td width=210>
-      <p align="center">
-        <a href="https://github.com/seohyunee22"><b>양서현</b></a>
-      </p>
-    </td>
-    <td width=170>
-      <p align="center">
-        <a href="https://github.com/sanggank"><b>이상경</b></a>
-      </p>
-    </td>
-    <td width=170>
-      <p align="center">
-        <a href="https://github.com/devBuzz142"><b>정종관</b></a>
-      </p>
-    </td>
-    <td width=160>
-      <p align="center">
-        <a href="https://github.com/tmdqor"><b>이승백</b></a>
-      </p>
-    </td>
-    <td width=190>
-      <p align="center">
-        <a href="https://github.com/nachalsa"><b>이주용</b></a>
-      </p>
+    <td align="center" style="text-align:center;" width="80px">
+      <b>시연 영상</b>
     </td>
   </tr>
-  <tr>
-    <td>
-       - 팀장 <br> - 프로젝트 기획 <br> - 모델 조사 및 학습 <br>  베이스라인 코드 <br> - 웹 프론트엔드
+  
+  <tr height="40px">
+    <td align="center" width="150px">
+        <a href="https://codeplay-ai.netlify.app"><img src="https://img.shields.io/badge/Netlify-ffffff?style=flat-square&logo=Netlify">
     </td>
-    <td>
-      - 데이터셋 조사 및 수집 <br> - 토크나이징 방식 비교 및 실험 <br> - 길이 연장 모델 (Model3) 구현
-    </td>
-    <td>
-      - 데이터 생성 및 수집 <br> - 텍스트 분류 모델 (Model1) 제작
-    </td>
-    <td>
-      - 데이터 전처리 <br> - 음악 생성 모델(Model2) 학습
-    </td>
-    <td>
-      - 데이터 가공 <br> - 백엔드 제작
-    </td>
-    <td>
-      - 토큰나이징 방식 개선 <br> - 생성방식 다각화 구상 및 실험
+    <td align="center" width="150px">
+      <a href="https://youtu.be/PThn811Lli8"><img src="https://img.shields.io/badge/Youtube-FF0000?style=flat-square&logo=YouTube&logoColor=white">
     </td>
   </tr>
 </table>
+<p align="center">(↑ 로고를 클릭하면 링크로 이동합니다)</p>
 
 
-## 개요
+&nbsp;
+&nbsp;
 
-### 문제 정의
 
-- 기존 음악 생성 서비스는 WAV 형식으로 생성됨.
-- 생성된 음악을 특정 구간이나 악기를 변경하는 것과 같은 세부적인 편집이 어렵거나 불가능함.
-- 결과적으로, 실제 음악 업계 종사자나 아마추어 작곡가들이 이러한 서비스를 이용하기 어려워함.
+## 🙆🏻 Members 
+<table align="center">
+  <tr height="155px">
+    <td align="center" width="170px">
+      <a href="https://github.com/patcasso"><img src="https://avatars.githubusercontent.com/patcasso"/></a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/seohyunee22"><img src="https://avatars.githubusercontent.com/seohyunee22"/></a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/sanggank"><img src="https://avatars.githubusercontent.com/sanggank"/></a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/tmdqor"><img src="https://avatars.githubusercontent.com/tmdqor"/></a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/nachalsa"><img src="https://avatars.githubusercontent.com/nachalsa"/></a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/devBuzz142"><img src="https://avatars.githubusercontent.com/devBuzz142"/></a>
+    </td>
+  </tr>
+  
+  <tr height="40px">
+    <td align="center" width="170px">
+      <a href="https://github.com/patcasso">정지영_T6158</a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/seohyunee22">양서현_T6099</a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/sanggank">이상경_T6121</a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/tmdqor">이승백_T6126</a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/nachalsa">이주용_T6137</a>
+    </td>
+    <td align="center" width="170px">
+      <a href="https://github.com/devBuzz142">정종관_T6157</a>
+    </td>
+  </tr>
 
-### 목표 및 기대 효과
+   <tr height="80px">
+    <td style="text-align:left;" width="170px">
+      <b>- 팀장</b><br>
+      <b>- 프로젝트 기획</b><br>
+      <b>- 모델 조사</b><br> 
+      <b>- baseline코드 작성</b><br>
+      <b>- 웹 프론트엔드</b><br>
+    </td>
+    <td style="text-align:left;" width="170px">
+      <b>- 데이터셋 조사</b><br>
+      <b>- 토크나이징 방식 비교 및 실험</b><br>
+      <b>- Model 3 구현</b><br>
+    </td>
+    <td style="text-align:left;" width="170px">
+      <b>- 데이터 생성/수집</b><br>
+      <b>- Model 1 구현</b><br>
+    </td>
+    <td style="text-align:left;" width="170px">
+      <b>- 데이터 가공</b><br>
+      <b>- 백엔드 제작</b><br>
+    </td>
+    <td style="text-align:left;" width="170px">
+      <b>- 토크나이징 방식 개선</b><br>
+      <b>- 생성방식 다각화 구상 / 실험</b><br>
+    </td>
+    <td style="text-align:left;" width="170px">
+      <b>- 데이터 전처리</b><br>
+      <b>- Model 1 구현</b><br>
+    </td>
+  </tr>
+</table>
 
-- 목표 ⇒ 사용자가 자신의 감정이나 생각을 텍스트로 표현하면 이를 기반으로 편집 가능한 디지털 악보 형태의 데이터인 MIDI 파일이 생성하는 것
-- 기대효과
-  - 누구나 보다 쉽게 작곡을 할 수 있어 창작에 대한 진입장벽을 낮춤.
-  - 기존 창작자에게 새로운 시각과 접근 방식을 제공하여 창의적 활동을 보조함.
-    <img src="./etc/img_timeline.png">
+<br>
 
-## 모델링
+## 🛠️ Tech Stack
+<img src="https://img.shields.io/badge/Pytorch-EE4C2C?style=flat-square&logo=Pytorch&logoColor=white"> <img src="https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi"> <img src="https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=AmazonAWS&logoColor=white"/> <img src="https://img.shields.io/badge/react-%2361DAFB.svg?&style=flat-square&logo=react&logoColor=black" /> <img src="https://img.shields.io/badge/node.js-%23339933.svg?&style=flat-square&logo=node.js&logoColor=white" /> <img src="https://img.shields.io/badge/github-181717?style=flat-square&logo=github&logoColor=white">
+<!--<img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white">-->
+<!--<img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=Python&logoColor=white">-->
 
-<img src="./etc/img_models.png">
 
-### Model 1 : Text Classifier Model
+<br>
 
-- 입력 받은 text를 { `Genre`, `Emotion`, `Tempo` }로 분류
-- Dataset (26k)
-  - Input text : Llama2로 생성, Youtube comments crawling
-  - Emotion : Llama2로 생성
-  - Tempo : MIDI 파일 내에 존재하는 데이터
-  - Genre : MIDI 메타데이터 정보
-- 사용한 모델 : SamLowe/roberta-base-go_emotions
-  - Reddit의 58,000개의 댓글을 28가지 감정으로 분류하도록 Fine-tuning 한 모델
-- 기존 모델에 Layer 한 층을 병렬로 3개 연결하여 각각 { `Genre`, `Emotion`, `Tempo` } 분류
+## 📖 Overview
+### 1. 문제 정의
 
-### Model 2 : MIDI Generative Model
+기존 음악 생성 서비스는 **WAV 형식**으로 음악이 생성됩니다. 
+<br>
+WAV 형식으로 생성된 음악은 특정 구간이나 악기를 변경하는 것과 같은 **세부적인 편집이 어렵거나 불가능**합니다. 
+<br>
+결과적으로 이는 실제 음악 업계 종사자나 아마추어 작곡가들이 서비스를 이용하기 어려워한다는 이유가 됩니다.
+<br>
+<br>
+따라서, CodyPlay 프로젝트는 `“편집 가능한 음악 생성 서비스는 없을까?”` 라는 질문에서 시작하게 되었습니다.
+<br>
 
-- Model 1이 text prompt로부터 분류한 { `Genre`, `Emotion`, `Tempo`, `Instrument` } 정보를 바탕으로 MIDI 파일을 생성
-- 기반 모델 : GPT-2
-- Pre-training Dataset : [Lakh-MIDI-dataset](https://colinraffel.com/projects/lmd/) (17k)
-  - Open-Source MIDI dataset
-- Fine-tuning Dataset : Genre-Lakh(9k) + [Jazz](http://www.thejazzpage.de/index1.html) (0.2k) + [K-pop](https://www.aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=data&dataSetSn=71544) (13k) = 통합 데이터세트(22k)
-  - 기존 Lakh 데이터는 Rock 장르에 편향되어 있으므로 장르 간 균형있게 샘플링한 데이터
-  - 재즈, 케이팝(AI-Hub) 데이터
-- NNN-tokenizer
-  - `Note`(음정) + `Velocity`(강세) + `Duration`(지속시간) 를 바탕으로 MIDI파일을 토큰화
-  - 기존 MIDI Tokenizer인 MMM Tokenizer 를 개량함
+### 2. 목표
+<table align="center">
+  <tr height="40px">
+    <td align="center" style="text-align:center;" width="250px">
+      <b>01</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>02</b>
+    </td>
+  </tr>
+  <tr height="50px">
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Text-to-Music</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Symbolic Music Generation</b>
+    </td>
+  </tr>
+  <tr height="100px">
+    <td align="center" style="text-align:center;" width="260px">
+      <b><code>텍스트 프롬프트</code>를 활용하여<br>
+      사용자가 원하는 분위기, 장르의<br>
+      음악을 생성하는 서비스
+      </b>
+    </td>
+    <td align="center" style="text-align:center;" width="260px">
+      <b>편집 가능성을 극복하기 위해<br>
+      <code>언어 모델 기반</code>으로<br>
+      <code>디지털 악보</code> 결과물 제공</b>
+    </td>
+  </tr>
+</table>
+<br>
 
-### Model 3 : Length Extension & Infilling Model
 
-- 사용 모델 : Anticipatory Music Transformer (Lahk dataset, Trained to predict next event)
-- 모델 채택 사유
-  1. 짧은 시퀀스(4마디) output를 생성하는 Model 2의 한계 극복
-  2. 잘 구현되어있는 기능을 변형하여 User들에게 다양한 선택지를 제공
-  3. 같은 Symbolic Music Generative Model인 Model 2와의 기능적 호환
-- 요약
-  기능 1. Extending Music Length : 긴 시퀀스(길이)의 음악 생성
-  - 기존: 주어진 미디파일의 길이를 초 단위로 연장(Extend)
-  - 활용
-    - 기존 기능 사용 시 BPM이 유실되는 문제가 발생
-    - **연장 단위**를 기존 초 단위에서 **4마디 단위**로 변형
-      기능 2. Infilling Desired Bar : 원하는 마디 재생성
-  - 기존: 생성을 원하는 구간의 음악의 앞, 뒤(단위:초)의 정보가 주어지면, 중간 부분을 채워넣기(Infilling)
-  - 활용: 재생성을 원하는 마디의 앞, 뒤(단위:마디)를 제공하여 재생성
-    기능 3. Re-gen Instrument & Compatibility with Model 2 : 악기 재생성 및 Model 2와의 호환성
+### 3. 기대 효과
+- 누구나 보다 쉽게 작곡을 할 수 있어 창작에 대한 진입장벽을 낮출 수 있습니다.
+- 기존 창작자에게 새로운 시각과 접근 방식을 제공하여 창의적 활동을 보조합니다.
 
-## Serving
+<br>
 
-- Frontend - React.js Website via Netlify
-- Backend - FastAPI ML Server via NAVER Cloud Platform
-- Proxy - AWS Lambda, AWS API Gateway
-
-## 결과
-
-### 결과 및 자체 평가 의견
-
-- **성과**
-  - 사용자가 입력한 프롬프트에서 3개의 토큰(`Emotion`, `Genre`, `Tempo`)를 성공적으로 추출해냄
-  - 위 세 가지 토큰을 조건으로, 사용자가 원하는 분위기의 음악을 생성해냄
-  - 특정 악기만 재생성 하더라도, 기존의 음악과 어울리는 트랙이 생성됨
-  - 웹 프론트엔드 서비스가 기능에 맞게 잘 디자인되어 있음
-  - 원하는 음악이 괜찮은 성능으로 잘 생성된 것을 알 수 있었음
-- **한계점**
-  - 데이터셋 장르 편향으로 Rock 장르가 가장 잘 생성되고, 다른 장르들의 퀄리티는 조금 아쉬운 면이 있음
-  - 긴 길이의 음악 생성이 원활하지 않아서 아쉬움
-  - 사용자가 상호작용을 할 수 있는 부분이 생각보다는 적게 구현되어 아쉬움
-  - Scale-up을 위해 멀티 GPU 학습을 시도 했으나, Multi-Node Multi-GPU의 상황에서 오히려 모델의 성능이 저하됨
-
-## 학습 및 생성 길이 연장
-
-[사용자 피드백을 통한 강화학습](https://www.notion.so/77d570f7020d49acb1af290d575a07d9?pvs=21)
-
-[텍스트를 인코딩 된 벡터로 변환 후 모델에 전달](https://www.notion.so/84c231c6c9654d55987b8cc88fb47adc?pvs=21)
-
-[**입력 프롬프트 번역  API 추가**](https://www.notion.so/API-2c9c361a2ff843b5b6d5f7c8410bab57?pvs=21)
-
-[**생성 길이 연장용 기학습 모델 추가**](https://www.notion.so/c42b5946d97d4b24a777cecb9600ba79?pvs=21)
-
-## Appendix
+##  🚀 Total Structure
 
 <img src="./etc/img_production.png">
 
-## Reference
+<br>
+
+## 💡 Modeling
+
+<img src="./etc/img_models.png">
+
+<table align="center">
+  <tr height="40px">
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Model 1</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Model 2</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Model 3</b>
+    </td>
+  </tr>
+  <tr height="40px">
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Text Classifier Model</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>MIDI Generative Model</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Extension & Infilling Model</b>
+    </td>
+  <tr height="100px">
+    <td align="center" style="text-align:center;" width="250px">
+      <b>입력 받은 Text를  
+      <br>{<code>Genre</code>, <code>Emotion</code>, <code>Temp</code>}
+      <br>로 분류
+      </b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b>Model 1의 Text Prompt부터 
+      <br>분류한 {<code>Genre</code>, <code>Emotion</code>, 
+      <br><code>Temp</code>, <code>Instrument</code>} 정보를
+      <br> 바탕으로 MIDI 파일 생성</b>
+    </td>
+    <td align="center" style="text-align:center;" width="250px">
+      <b><code>긴 시퀀스</code>의 음악 생성 및 
+      <br><code>마디 재생성</code>을 위한 모델
+      </b>
+    </td>
+  </tr>
+</table>
+<br>
+🔎 모델링에 관한 자세한 내용은 <a href="https://www.notion.so/boostcampait/NLP-07-CodePlay-8df2eae94c904775a53b853a34f636ee?pvs=4#fd5aa82552fb40789bac1e7a83aa9b91"><img src="https://img.shields.io/badge/notion-%23000000.svg?&style=for-the-badge&logo=notion&logoColor=white "/></a>(클릭시 이동) 에서 확인하실 수 있습니다.
+
+
+<br>
+
+
+<br>
+
+
+## 🚩 Serving Architecture
+<img src="etc\img_serving.png">
+
+### <p align="center"> Frontend </p>
+<p align="center"> <img src="https://img.shields.io/badge/react.js-%2361DAFB.svg?&style=flat-square&logo=react&logoColor=black" />  Website via <img src="https://img.shields.io/badge/Netlify-ffffff?style=flat-square&logo=Netlify"></p>
+
+### <p align="center"> Backend </p>
+<p align="center"> <img src="https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi"> ML Server via <img src="https://img.shields.io/badge/NAVER Cloud Platform-%2303C75A.svg?&style=flat-square&logo=naver&logoColor=white" /></p>
+
+### <p align="center"> Proxy </p>
+<p align="center"> <img src="https://img.shields.io/badge/AWS Lambda-232F3E?style=flat-square&logo=AmazonAWS&logoColor=white"/> <img src="https://img.shields.io/badge/AWS API Gateway-232F3E?style=flat-square&logo=AmazonAWS&logoColor=white"/></p>
+
+<br>
+
+
+## 🎓 Reference
 
 ### ML
 
 [1]  MMM : Exploring Conditional Multi-Track Music Generation with the Transformer. Jeff Ens, Philippe Pasquier(2020). _[arXiv preprint arXiv:2008.06048](https://arxiv.org/abs/2008.06048)_
 
-[2]  YM2413-MDB: A MULTI-INSTRUMENTAL FM VIDEO GAME MUSIC DATASET WITH EMOTION
-
-ANNOTATIONS. _[arXiv preprint arXiv:2211.07131](https://arxiv.org/abs/2211.07131)_
+[2]  YM2413-MDB: A MULTI-INSTRUMENTAL FM VIDEO GAME MUSIC DATASET WITH EMOTION ANNOTATIONS. _[arXiv preprint arXiv:2211.07131](https://arxiv.org/abs/2211.07131)_
 
 [3]  Anticipatory Music Transformer. _[arXiv preprint arXiv:2306.08620](https://arxiv.org/abs/2306.08620)_
 
-[4]  Using 🤗 to Train a GPT-2 Model for Music Generation. Juan Carlos Piñeros(2023).
-
-https://huggingface.co/blog/juancopi81/using-hugging-face-to-train-a-gpt-2-model-for-musi
+[4]  Using 🤗 to Train a GPT-2 Model for Music Generation. Juan Carlos Piñeros(2023). https://huggingface.co/blog/juancopi81/using-hugging-face-to-train-a-gpt-2-model-for-musi
 
 [5]  SamLowe/roberta-base-go_emotions. https://huggingface.co/SamLowe/roberta-base-go_emotions
 
