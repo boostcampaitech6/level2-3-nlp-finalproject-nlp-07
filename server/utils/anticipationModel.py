@@ -14,10 +14,14 @@ from symusic import Score
 from symusic.core import TempoTick
 from pathlib import Path
 import os
-from settings import TEMP_DIR
+from settings import TEMP_DIR, ANTICIPATION_MODEL_NAME
+import torch
 
-SMALL_MODEL = 'stanford-crfm/music-small-800k'   # slower inference, better sample quality
-model = AutoModelForCausalLM.from_pretrained(SMALL_MODEL).cuda()
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+def initialize_anticipation_model():
+    model = AutoModelForCausalLM.from_pretrained(ANTICIPATION_MODEL_NAME).to(DEVICE)
+    return model
 
 def get_instruments_list(proposal):
     return list(get_instruments(proposal).keys())
@@ -40,7 +44,7 @@ def pre_processing(MIDI_FILE):
     
     return evnets
 
-def extend_4bar_to_8bar(midi_path):
+def extend_4bar_to_8bar(model, midi_path):
     length = 60 / 120 * 4 * 4
     mspq, qpm = extract_midi_info(midi_path)
     events = pre_processing(midi_path)
@@ -61,10 +65,10 @@ def extend_4bar_to_8bar(midi_path):
 
     return extended_midi
 
-def infill_at(midi_path, bar_idx, num_of_bars = 8):
+def infill_at(model, midi_path, bar_idx, num_of_bars = 8):
     if bar_idx > num_of_bars or bar_idx < 2:
         print("bar_idx must be in range 2 ~ 8")
-        raise ValueError("bar_idx must be in range 2 ~ 8")
+        # raise ValueError("bar_idx must be in range 2 ~ 8")
     
     length = 60 / 120 * 4 * 4
     length_per_bar = (length/num_of_bars)*(num_of_bars/4) # 사실 항상 2임

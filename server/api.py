@@ -21,7 +21,7 @@ from utils.generateModel_util import (
     generate_add_8bar_track
 )
 from utils.frontModel_util import initialize_front_model, extract_condition
-from utils.anticipationModel import extend_4bar_to_8bar, infill_at
+from utils.anticipationModel import initialize_anticipation_model, extend_4bar_to_8bar, infill_at
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo, adjust_ticks_per_beat
 from utils.data_processing import generate_tempo
 from settings import TEMP_DIR
@@ -42,13 +42,18 @@ translator = googletrans.Translator()
 
 router = APIRouter()
 
-# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 # front model initialize
 front_model, front_tokenizer = initialize_front_model()
 
 # generate model initialize
 generate_model, generate_tokenizer = initialize_generate_model()
+
+# anticipation model initialize
+anticipation_model = initialize_anticipation_model()
+
+@router.get("/get_count/")
+def get_count(req: Request):
+    pass
 
 @router.post("/generate_midi/")
 async def generate_midi(req: Request, text_data: TextData):
@@ -93,6 +98,7 @@ async def generate_midi(req: Request, text_data: TextData):
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)
 
+    # modify ticks per beat
     adjust_ticks_per_beat(file_path, 200)
 
     logging.info(f"generate_midi : {Score(file_path)}")
@@ -147,8 +153,6 @@ async def receive_midi(req: Request, request_json: UploadData):
     midi_data.dump_midi(add_file_path)
 
     # modify ticks per beat
-    # if regenPart != "default":
-    #     adjust_ticks_per_beat(add_file_path, 50)
     adjust_ticks_per_beat(add_file_path, 200)
 
     # mspq, qpm 헤더 정보 저장
@@ -194,7 +198,7 @@ async def extend_midi(req: Request, request_json: UploadData):
         return {"status": "failed", "message": str(e)}
 
     # 4마디 -> 8마디 연장
-    extended_midi = extend_4bar_to_8bar(extd_recv_file_path)
+    extended_midi = extend_4bar_to_8bar(anticipation_model, extd_recv_file_path)
     extd_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_extd_result.mid")
     extended_midi.dump_midi(extd_result_path)
 
@@ -208,6 +212,7 @@ async def extend_midi(req: Request, request_json: UploadData):
     midi_result.tracks.insert(0, midi_header)
     midi_result.save(extd_result_path)
 
+    # modify ticks per beat
     adjust_ticks_per_beat(extd_result_path, 200)
 
     logging.info(f"extend_midi : {Score(extd_result_path)}")
@@ -240,14 +245,11 @@ async def infill_midi(req: Request, request_json: UploadData):
         return {"status": "failed", "message": str(e)}
 
     # 1마디 교체
-    infill_midi = infill_at(infill_recv_file_path, infill_bar_idx)
+    infill_midi = infill_at(anticipation_model, infill_recv_file_path, infill_bar_idx)
     infill_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_result.mid")
     infill_midi.dump_midi(infill_result_path)
 
-    # # modify ticks per beat
-    # if total_bars == 4:
-    #     adjust_ticks_per_beat(infill_result_path, 8)
-
+    # modify ticks per beat
     adjust_ticks_per_beat(infill_result_path, 200)
 
     # 트랙 헤더 정보 저장
