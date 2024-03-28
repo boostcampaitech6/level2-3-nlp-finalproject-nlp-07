@@ -178,7 +178,7 @@ const MidiView = (props) => {
             bodyData = JSON.stringify({
                 "midi": base64Data,
                 "regenBarIndex": regenBarIndex,
-                "totalBars":  totalBars,
+                "totalBars": totalBars,
             })
             setIsInfilling(true);
         }
@@ -252,13 +252,13 @@ const MidiView = (props) => {
 
                             const trackSort = (a, b) => {
                                 if (a.instrument.percussion) {
-                                    const orderA = tempTrackInstOrder[-1]; 
-                                    const orderB = tempTrackInstOrder[b.instrument.number]; 
-                                    return orderA - orderB; 
+                                    const orderA = tempTrackInstOrder[-1];
+                                    const orderB = tempTrackInstOrder[b.instrument.number];
+                                    return orderA - orderB;
                                 } else if (b.instrument.percussion) {
-                                    const orderA = tempTrackInstOrder[a.instrument.number]; 
-                                    const orderB = tempTrackInstOrder[-1]; 
-                                    return orderA - orderB; 
+                                    const orderA = tempTrackInstOrder[a.instrument.number];
+                                    const orderB = tempTrackInstOrder[-1];
+                                    return orderA - orderB;
                                 } else {
                                     const orderA = tempTrackInstOrder[a.instrument.number];
                                     const orderB = tempTrackInstOrder[b.instrument.number];
@@ -407,6 +407,7 @@ const MidiView = (props) => {
                         </span>
                     </div> */}
                     <MultiTrackView
+                        isMobileDevice={props.isMobileDevice}
                         midiFile={midiFile}
                         totalBars={totalBars}
                         isAdding={isAdding}
@@ -435,17 +436,18 @@ const MidiView = (props) => {
                                     className="float-start"
                                     variant="outline-dark"
                                     onClick={handleDownloadMidi}
+                                    size={props.isMobileDevice && "sm"}
                                     disabled={props.isGenerating || isAdding || isExtending || isInfilling}
                                 >
                                     Download Current MIDI
                                 </Button>
-                                <SampleMidiDropdown
+                                {/* <SampleMidiDropdown
                                     sampleTitle={sampleTitle}
                                     handleLoadSampleMidi={handleLoadSampleMidi}
                                     setSampleTitle={setSampleTitle}
                                     isGenerating={props.isGenerating}
                                     isAdding={isAdding}
-                                />
+                                /> */}
                                 {/* <Button
                                     className="float-start ms-2"
                                     variant="danger"
@@ -457,11 +459,13 @@ const MidiView = (props) => {
                             <Col>
                                 <ButtonGroup className="float-end me-2">
                                     <InstListDropdown
+                                        isMobileDevice={props.isMobileDevice}
                                         addInstNum={addInstNum}
                                         currentInstruments={currentInstruments}
                                         setAddInstNum={setAddInstNum}
                                     />
                                     <Button
+                                        size={props.isMobileDevice && "sm"}
                                         variant="outline-primary"
                                         onClick={handleClickAddInst}
                                         disabled={props.isGenerating || isAdding || isExtending || isInfilling}
@@ -471,6 +475,7 @@ const MidiView = (props) => {
                                 </ButtonGroup>
                                 <Button
                                     disabled={totalBars === 8 || isExtending || isAdding || isInfilling}
+                                    size={props.isMobileDevice && "sm"}
                                     variant="outline-dark"
                                     className="float-end me-2"
                                     onClick={handleClickExtend}

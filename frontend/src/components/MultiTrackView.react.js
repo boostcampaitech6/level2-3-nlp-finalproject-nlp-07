@@ -23,7 +23,8 @@ import { notePositions } from "../utils/notePositions.js";
 const progressBarStyle = {
   position: 'relative',
   backgroundColor: "#35a64a",
-  borderRadius: "7px"
+  borderRadius: "7px",
+  paddingRight: "5px"
 }
 
 // 페이지를 로드할 때 하나의 AudioContext 만들어 시간을 추적하며 계속해서 사용
@@ -116,6 +117,7 @@ const MultiTrackView = (props) => {
   useEffect(() => {
     if (currentTime >= totalMs) {
       setPlaying(false);
+      setPlayingEight(false);
       setCurrentTime(0);
     }
   });
@@ -259,7 +261,9 @@ const MultiTrackView = (props) => {
       fontSize: "0.7rem",
       opacity: 0.7,
       backgroundColor: index === infillBarIdx ? "#7591ff" : "transparent",
-      cursor: index === infillBarIdx ? "pointer" : "auto"
+      cursor: index === infillBarIdx ? "pointer" : "auto",
+      borderLeft: `${Math.ceil(index / props.totalBars) * 2}px dotted white`,
+      paddingLeft: "3px",
     }
 
     return (
@@ -480,6 +484,7 @@ const MultiTrackView = (props) => {
             ■
           </Button>
           <Button
+            hidden={props.isMobileDevice === true}
             className="ms-2"
             variant="dark"
             onClick={handleClickBeginning}
@@ -512,6 +517,7 @@ const MultiTrackView = (props) => {
             ▶▶
           </Button> */}
           <Button
+            hidden={props.isMobileDevice === true}
             disabled={props.isGenerating || playing}
             className="ms-2 float-middle"
             variant="dark"
@@ -553,7 +559,7 @@ const MultiTrackView = (props) => {
       <Row className="mt-3" style={{ color: "gray" }}>
         <Col xs={2}>
           {/* <div>Total Time: {(totalMs / 1000).toFixed(1)} (s)</div> */}
-          <div>
+          <div hidden={props.isMobileDevice === true}>
             <span>{(currentTime / 1000).toFixed(1)} (s)</span>
             <span> / {(totalMs / 1000).toFixed(1)} (s), </span>
             <span>BPM: {Math.round(bpm)}</span>
@@ -562,7 +568,7 @@ const MultiTrackView = (props) => {
 
           </div>
         </Col>
-        <Col xs={9} style={progressBarStyle} className="mb-2 p-0">
+        <Col xs={9} style={progressBarStyle} className="mb-2 p-0 pe-1">
           <div style={{ display: 'flex', paddingLeft: "5px" }}>
             {midiFile && [...Array(props.totalBars)].map((_, index) => (
               BarHeaderComponent(index)
@@ -585,9 +591,10 @@ const MultiTrackView = (props) => {
               bpm={bpm}
               ticksPerBeat={ticksPerBeat}
               beatsPerBar={beatsPerBar}
-              totalBars={props.totalBars}
               soloTrack={soloTrack}
               mutedTracks={mutedTracks}
+              totalBars={props.totalBars}
+              isMobileDevice={props.isMobileDevice}
               instrumentTrack={props.instrumentObject[idx]}
               regenTrackIdx={props.regenTrackIdx}
               isGenerating={props.isGenerating}

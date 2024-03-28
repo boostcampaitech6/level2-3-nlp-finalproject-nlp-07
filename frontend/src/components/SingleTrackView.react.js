@@ -112,6 +112,7 @@ const SingleTrackView = (props) => {
             <Col xs={1} className="d-flex align-items-center">
                 <Button
                     className="float-end"
+                    hidden={props.isMobileDevice === true}
                     disabled={props.isGenerating || props.isAdding}
                     variant="outline-primary"
                     onClick={() => props.handleSoloButton(props.idx)}
@@ -122,6 +123,7 @@ const SingleTrackView = (props) => {
                 </Button>
                 <Button
                     className="float-end"
+                    hidden={props.isMobileDevice === true}
                     disabled={props.isGenerating || props.isAdding}
                     variant="outline-secondary"
                     onClick={() => props.handleMuteButton(props.idx)}
@@ -132,6 +134,7 @@ const SingleTrackView = (props) => {
                 </Button>
                 <Button
                     className="float-end"
+                    hidden={props.isMobileDevice === true}
                     disabled={props.playing || props.isGenerating}
                     variant="outline-danger"
                     onClick={() => props.handleClickRemove(props.idx)}
