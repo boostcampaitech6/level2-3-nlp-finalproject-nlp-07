@@ -4,5 +4,6 @@
     "FRONT_MODEL_NAME": "SangGank/my-front-model",
     "PICKLE_PATH": "labels.pkl",
     "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",
-    "TEMP_DIR" : "./temp/"
+    "TEMP_DIR" : "./temp/",
+    "LOGS_DIR": "./logs/"
   }

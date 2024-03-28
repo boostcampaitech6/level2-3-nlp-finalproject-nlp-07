@@ -20,6 +20,7 @@ FRONT_MODEL_NAME = config['FRONT_MODEL_NAME']   # hugging face
 PICKLE_PATH = config['PICKLE_PATH']
 GENRE_INSTRUMENTS_PICKLE_PATH = config['GENRE_INSTRUMENTS_PICKLE_PATH']
 TEMP_DIR = config['TEMP_DIR']
+LOGS_DIR = config['LOGS_DIR']
 
 
 create_folder_if_not_exists(MODEL_DIR)
