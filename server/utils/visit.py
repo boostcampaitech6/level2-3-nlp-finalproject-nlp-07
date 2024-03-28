@@ -3,6 +3,10 @@ from datetime import datetime
 import os
 from settings import LOGS_DIR
 
+import logging
+# 로깅 설정
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 def log_visit(req: Request):
     cli_ip = req.client.host
     cli_ip = cli_ip.replace(".", "_")
@@ -14,8 +18,10 @@ def log_visit(req: Request):
     if os.path.exists(os.path.join(LOGS_DIR, 'visit', today, f"{cli_ip}.txt")):
         return
         
+    logging.info(f"new visit - client_ip : {cli_ip}, today : {today}")
     with open(os.path.join(LOGS_DIR, 'visit', today, f"{cli_ip}.txt"), 'a') as f:
         f.write(f"{datetime.now()}, {cli_ip}\n")
+
 
 def count_total_visit():
     # count the number of  text files in logs/visit

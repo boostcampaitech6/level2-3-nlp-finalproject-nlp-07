@@ -24,6 +24,7 @@ from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.anticipationModel import extend_4bar_to_8bar, infill_at
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo, adjust_ticks_per_beat
 from utils.data_processing import generate_tempo
+from utils.visit import count_today_visit, count_total_visit
 from settings import TEMP_DIR
 
 # 캐쉬 삭제
@@ -253,3 +254,11 @@ async def infill_midi(req: Request, request_json: UploadData):
         file_content = b64encode(file.read())
     
     return file_content
+
+@router.get("/get_count/")
+async def get_count(request: Request):
+    today_visit = count_today_visit()
+    total_visit = count_total_visit()
+    
+    return JSONResponse(content={"today_visit": today_visit, "total_visit": total_visit})
+    
