@@ -1,7 +1,7 @@
 {
     "FRONT_MODEL_NAME": "SangGank/my-front-model",
     "GENERATE_MODEL_NAME": "devbuzz142/cp03-finetune-cp01-ALL-NNN-meta2-emb384",
-    "ANTICIPATION_MODEL_NAME" : "'stanford-crfm/music-small-800k'",
+    "ANTICIPATION_MODEL_NAME" : "stanford-crfm/music-small-800k",
     "PICKLE_DIR": "./pickle/",
     "LABEL_PICKLE_PATH": "labels.pkl",
     "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",
