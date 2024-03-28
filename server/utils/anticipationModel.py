@@ -38,9 +38,11 @@ def pre_processing(MIDI_FILE):
     score = Score(Path(MIDI_FILE))
     new_tempo_tick = TempoTick(time=0, qpm=120, mspq=50000)
     score.tempos[0] = new_tempo_tick
-    score.dump_midi('./anticipation-temp.mid')    
-    evnets = midi_to_events('./anticipation-temp.mid')
-    os.remove('./anticipation-temp.mid')
+
+    temp_file_path = os.path.join(TEMP_DIR, "anticipation-temp.mid")
+    score.dump_midi(temp_file_path)    
+    evnets = midi_to_events(temp_file_path)
+    os.remove(temp_file_path)
     
     return evnets
 
