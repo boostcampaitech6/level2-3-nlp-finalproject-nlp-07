@@ -29,7 +29,6 @@ function NavBar(props) {
                         </Nav.Link>
                         <Nav.Link
                             onClick={() => { props.setShowTutorialModal(true) }}
-                        // href="#link"
                         >
                             Tutorial
                         </Nav.Link>
@@ -52,6 +51,8 @@ function NavBar(props) {
                         <span>codeplay.nlp@gmail.com</span>
                         <br />
                         <span>© 2024 NLP07-CodePlay CO. ALL RIGHTS RESERVED</span>
+                        <br />
+                        <span style={{ fontSize: "1.4em", color: "white", opacity: 0.9 }}>Total Generated: {props.generationCount && props.generationCount.toLocaleString()}</span>
                     </Navbar.Text>
                 </Navbar.Collapse>
 

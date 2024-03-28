@@ -21,6 +21,7 @@ const InstListDropdown = (props) => {
 
     return (
         <Dropdown
+            size={props.isMobileDevice && "sm"}
             as={ButtonGroup}
             className="float-end"
             variant="outline-dark"

@@ -145,6 +145,7 @@ const TextPromptView = (props) => {
       <Button
         size="sm"
         disabled={props.isGenerating}
+        hidden={props.isMobileDevice}
         style={buttonStyle}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -155,12 +156,13 @@ const TextPromptView = (props) => {
     );
   }
 
-
-
   const sendLambdaRequest = () => {
     props.setIsGenerating(true);
+    let url;
+    url = "https://zab3ww1o85.execute-api.ap-northeast-2.amazonaws.com/default/codeplayGenerateFromPrompt";
+
     fetch(
-      "https://zab3ww1o85.execute-api.ap-northeast-2.amazonaws.com/default/codeplayGenerateFromPrompt",
+      url,
       {
         method: 'POST',
         headers: {
@@ -313,7 +315,7 @@ const TextPromptView = (props) => {
             <Row className="mt-4">
               <Col xs={10}>
                 <Row>
-                  {examplePromptsObj.map((example) => {
+                  {props.isMobileDevice === false && examplePromptsObj.map((example) => {
                     return (
                       <Col key={example[0]} md={4} className="d-flex justify-content-center align-items-center">
                         <PromptCards prompt={example[1]} />
