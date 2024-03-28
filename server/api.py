@@ -42,6 +42,8 @@ translator = googletrans.Translator()
 
 router = APIRouter()
 
+# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 # front model initialize
 front_model, front_tokenizer = initialize_front_model()
 
@@ -91,8 +93,7 @@ async def generate_midi(req: Request, text_data: TextData):
     file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_gen.mid")
     midi_data.dump_midi(file_path)
 
-    # modify ticks per beat
-    adjust_ticks_per_beat(file_path, 50)
+    adjust_ticks_per_beat(file_path, 200)
 
     logging.info(f"generate_midi : {Score(file_path)}")
 
@@ -146,7 +147,9 @@ async def receive_midi(req: Request, request_json: UploadData):
     midi_data.dump_midi(add_file_path)
 
     # modify ticks per beat
-    adjust_ticks_per_beat(add_file_path, 50)
+    # if regenPart != "default":
+    #     adjust_ticks_per_beat(add_file_path, 50)
+    adjust_ticks_per_beat(add_file_path, 200)
 
     # mspq, qpm 헤더 정보 저장
     from utils.anticipationModel import extract_midi_info
@@ -205,6 +208,8 @@ async def extend_midi(req: Request, request_json: UploadData):
     midi_result.tracks.insert(0, midi_header)
     midi_result.save(extd_result_path)
 
+    adjust_ticks_per_beat(extd_result_path, 200)
+
     logging.info(f"extend_midi : {Score(extd_result_path)}")
 
     with open(extd_result_path, 'rb') as file:
@@ -221,9 +226,11 @@ async def infill_midi(req: Request, request_json: UploadData):
 
     parsed_json = json.loads(request_json.request_json)
     infill_bar_idx = int(parsed_json['regenBarIndex'])+1
+
     encoded_midi = parsed_json['midi']
     decoded_midi = b64decode(encoded_midi)
-    
+    total_bars = parsed_json['totalBars']
+    logging.info(f"total_bars : {total_bars}")
     infill_recv_file_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_recv.mid")
     try:
         with open(infill_recv_file_path, "wb") as temp_file:
@@ -237,6 +244,12 @@ async def infill_midi(req: Request, request_json: UploadData):
     infill_result_path = os.path.join(TEMP_DIR, client_ip.replace(".", "_") + "_infill_result.mid")
     infill_midi.dump_midi(infill_result_path)
 
+    # # modify ticks per beat
+    # if total_bars == 4:
+    #     adjust_ticks_per_beat(infill_result_path, 8)
+
+    adjust_ticks_per_beat(infill_result_path, 200)
+
     # 트랙 헤더 정보 저장
     import mido
     midi_recv = mido.MidiFile(infill_recv_file_path)
@@ -248,6 +261,7 @@ async def infill_midi(req: Request, request_json: UploadData):
     midi_result.save(infill_result_path)
 
     logging.info(f"infill_midi : {Score(infill_result_path)}")
+
 
     with open(infill_result_path, 'rb') as file:
         file_content = b64encode(file.read())
