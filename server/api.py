@@ -24,7 +24,7 @@ from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.anticipationModel import initialize_anticipation_model, extend_4bar_to_8bar, infill_at
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo, adjust_ticks_per_beat
 from utils.data_processing import generate_tempo
-from utils.visit import count_today_visit, count_total_visit, log_visit
+from utils.visit import count_today_visit, count_total_visit, log_visit, log_generate, count_today_generate, count_total_generate
 from settings import TEMP_DIR
 
 # 캐쉬 삭제
@@ -58,7 +58,15 @@ async def get_count(request: Request):
     today_visit = count_today_visit()
     total_visit = count_total_visit()
     
-    return JSONResponse(content={"today_visit": today_visit, "total_visit": total_visit})
+    today_generate = count_today_generate()
+    total_generate = count_total_generate()
+    
+    return JSONResponse(content={
+        "today_visit": today_visit, 
+        "total_visit": total_visit,
+        "today_generate": today_generate,
+        "total_generate": total_generate
+        })
 
 @router.post("/generate_midi/")
 async def generate_midi(req: Request, text_data: TextData):
@@ -78,19 +86,24 @@ async def generate_midi(req: Request, text_data: TextData):
       }
     )
     """
+    gen_log = {}
+
     client_ip = req.client.host
     logging.info(f"client_ip : {client_ip}")
     
     text = text_data.prompt
     logging.info(f"input_text : {text}")
+    gen_log['input_text'] = text
 
     if text != "":
         text = translator.translate(text, dest='en').text
         logging.info(f"translate_text : {text}")
+    gen_log['translate_text'] = text
 
     # front model - condition 추출
     condition = extract_condition(text, front_model, front_tokenizer)
     logging.info("emotion : %s,  tempo : %s,  genre : %s", *condition)
+    gen_log['condition'] = f'emotion : {condition[0]}, tempo : {condition[1]}, genre : {condition[2]}'
     
     # generate model - midi track 생성
     midi_data = generate_initial_track(generate_model, generate_tokenizer, condition, top_tracks=5, temperature=0.8)
@@ -111,6 +124,8 @@ async def generate_midi(req: Request, text_data: TextData):
     with open(file_path, 'rb') as file:
         # file_content = b64encode(file.read())
         file_content = b64encode(file.read()).decode('utf-8')
+    
+    log_generate(req, gen_log)
       
     # return file_content
     return JSONResponse(content={"file_content": file_content, "condition": condition})
