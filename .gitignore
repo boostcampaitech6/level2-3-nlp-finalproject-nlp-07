@@ -10,6 +10,7 @@ build/
 
 # Ignore logs
 *.log
+logs/
 
 # Ignore environment variables file
 .env
