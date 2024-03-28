@@ -93,7 +93,7 @@ def adjust_ticks_per_beat(midi_file_path, new_ticks_per_beat):
     for track in mid.tracks:
         for msg in track:
             # 시간 값을 새로운 ticks_per_beat 값에 맞게 조정
-            msg.time = int(msg.time * (new_ticks_per_beat / current_ticks_per_beat))
+            msg.time = round(msg.time * (new_ticks_per_beat / current_ticks_per_beat))
 
     # 수정된 ticks_per_beat 값을 설정
     mid.ticks_per_beat = new_ticks_per_beat
