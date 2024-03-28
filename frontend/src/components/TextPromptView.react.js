@@ -62,6 +62,34 @@ const returnRandomPrompts = (n, lang) => {
   return result;
 }
 
+const PromptCards = ({ prompt, isGenerating, setPrompt, handleClickGenerate }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleClickExample = () => {
+    setPrompt(prompt);
+    handleClickGenerate();
+  }
+
+  const buttonStyle = {
+    backgroundColor: isHovered ? '#f0f0f0' : 'white',
+    borderColor: "#dbdbdb",
+    color: "#7a7a7a",
+    cursor: 'pointer',
+    // width: '23rem'
+  };
+
+  return (
+    <Button
+      disabled={isGenerating}
+      style={buttonStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onClick={handleClickExample}
+    >
+      {prompt}
+    </Button>
+  );
+}
 
 const TextPromptView = (props) => {
   const [language, setLanguage] = useState("EN")
@@ -102,34 +130,7 @@ const TextPromptView = (props) => {
     )
   }
 
-  const PromptCards = ({ prompt }) => {
-    const [isHovered, setIsHovered] = useState(false);
 
-    const handleClickExample = () => {
-      setPrompt(prompt);
-      handleClickGenerate();
-    }
-
-    const buttonStyle = {
-      backgroundColor: isHovered ? '#f0f0f0' : 'white',
-      borderColor: "#dbdbdb",
-      color: "#7a7a7a",
-      cursor: 'pointer',
-      // width: '23rem'
-    };
-
-    return (
-      <Button
-        disabled={props.isGenerating}
-        style={buttonStyle}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={handleClickExample}
-      >
-        {prompt}
-      </Button>
-    );
-  }
 
   const PromptRefresh = () => {
     const [isHovered, setIsHovered] = useState(false);
@@ -318,7 +319,12 @@ const TextPromptView = (props) => {
                   {props.isMobileDevice === false && examplePromptsObj.map((example) => {
                     return (
                       <Col key={example[0]} md={4} className="d-flex justify-content-center align-items-center">
-                        <PromptCards prompt={example[1]} />
+                        <PromptCards
+                          prompt={example[1]}
+                          isGenerating={props.isGenerating}
+                          setPrompt={setPrompt}
+                          handleClickGenerate={handleClickGenerate}
+                        />
                       </Col>
                     )
                   })}
@@ -328,7 +334,6 @@ const TextPromptView = (props) => {
                 <div style={{ marginRight: 'auto' }}>
                   <PromptRefresh />
                 </div>
-
               </Col>
               <Col xs={1} style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
                 <Button
