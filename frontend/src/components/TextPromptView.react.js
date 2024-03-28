@@ -293,7 +293,7 @@ const TextPromptView = (props) => {
                   placeholder={language === "EN" ? "Enter your prompt..." : language === "KR" ? "어떤 음악을 만들고 싶으신가요?" : null}
                   value={prompt}
                   onChange={(event) => {
-                    console.log(event.target.value.length);
+                    // console.log(event.target.value.length);
                     if (event.target.value.length <= MAX_PROMPT_LEN) {
                       setPrompt(event.target.value);
                     } else {
@@ -335,7 +335,7 @@ const TextPromptView = (props) => {
                   className="position-relative"
                   variant="primary"
                   onClick={handleClickGenerate}
-                  disabled={props.isGenerating}
+                  disabled={props.isGenerating || prompt === ""}
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                     {props.isGenerating ? "Generating..." : "Generate"}

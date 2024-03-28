@@ -86,7 +86,7 @@ const MidiView = (props) => {
                     instrumentsArray.push(-1) :
                     instrumentsArray.push(track.instrument.number);
             })
-            // console.log(instrumentsArray);
+            console.log(instrumentsArray);
             setCurrentInstruments(instrumentsArray);
         }
     }, [midiFile])

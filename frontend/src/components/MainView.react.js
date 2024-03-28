@@ -96,6 +96,7 @@ const MainView = () => {
     return (
         <>
             <NavigationBar
+                isMobileDevice={isMobileDevice}
                 generationCount={generationCount}
                 setShowTutorialModal={setShowTutorialModal}
                 setShowInfoModal={setShowInfoModal}
