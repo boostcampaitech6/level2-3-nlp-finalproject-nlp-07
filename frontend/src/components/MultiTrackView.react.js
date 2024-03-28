@@ -557,8 +557,7 @@ const MultiTrackView = (props) => {
       </Row>
       <Row className="mt-3" style={{ color: "gray" }}>
         <Col xs={2}>
-          {/* <div>Total Time: {(totalMs / 1000).toFixed(1)} (s)</div> */}
-          <div hidden={!midiFile || props.isMobileDevice === true}>
+          <div hidden={props.isMobileDevice === true}>
             <span>{(currentTime / 1000).toFixed(1)} (s)</span>
             <span> / {(totalMs / 1000).toFixed(1)} (s), </span>
             <span>BPM: {Math.round(bpm)}</span>
