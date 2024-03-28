@@ -5,5 +5,6 @@
     "PICKLE_DIR": "./pickle/",
     "LABEL_PICKLE_PATH": "labels.pkl",
     "GENRE_INSTRUMENTS_PICKLE_PATH": "genre_instruments.pkl",
-    "TEMP_DIR" : "./temp/"
+    "TEMP_DIR" : "./temp/",
+    "LOGS_DIR": "./logs/"
   }

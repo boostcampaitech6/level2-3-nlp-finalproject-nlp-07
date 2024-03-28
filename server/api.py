@@ -24,6 +24,7 @@ from utils.frontModel_util import initialize_front_model, extract_condition
 from utils.anticipationModel import initialize_anticipation_model, extend_4bar_to_8bar, infill_at
 from utils.utils import clear_huggingface_cache, clear_folder, extract_tempo, modify_tempo, extract_tempo, adjust_ticks_per_beat
 from utils.data_processing import generate_tempo
+from utils.visit import count_today_visit, count_total_visit, log_visit
 from settings import TEMP_DIR
 
 # 캐쉬 삭제
@@ -52,8 +53,12 @@ generate_model, generate_tokenizer = initialize_generate_model()
 anticipation_model = initialize_anticipation_model()
 
 @router.get("/get_count/")
-def get_count(req: Request):
-    pass
+async def get_count(request: Request):
+    log_visit(request)
+    today_visit = count_today_visit()
+    total_visit = count_total_visit()
+    
+    return JSONResponse(content={"today_visit": today_visit, "total_visit": total_visit})
 
 @router.post("/generate_midi/")
 async def generate_midi(req: Request, text_data: TextData):

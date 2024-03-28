@@ -21,7 +21,10 @@ PICKLE_DIR = config['PICKLE_DIR']
 LABEL_PICKLE_PATH = config['LABEL_PICKLE_PATH']
 GENRE_INSTRUMENTS_PICKLE_PATH = config['GENRE_INSTRUMENTS_PICKLE_PATH']
 TEMP_DIR = config['TEMP_DIR']
+LOGS_DIR = config['LOGS_DIR']
 
 
 create_folder_if_not_exists(PICKLE_DIR)
 create_folder_if_not_exists(TEMP_DIR)
+create_folder_if_not_exists(LOGS_DIR)
+create_folder_if_not_exists(os.path.join(LOGS_DIR, "visit"))

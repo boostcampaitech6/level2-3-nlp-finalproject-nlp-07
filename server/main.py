@@ -3,6 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Request
 from api import router
+from utils.visit import log_visit
 
 app = FastAPI(docs_url="/documentation", redoc_url=None)
 templates = Jinja2Templates(directory="templates")
@@ -16,8 +17,8 @@ origins = ["*"]
 
 @app.get("/")
 async def home(request: Request):
+    log_visit(request)
     return templates.TemplateResponse("midi.html",{"request":request})
-    return templates.TemplateResponse("index.html",{"request":request})
 
 app.include_router(router)
 app.add_middleware(
