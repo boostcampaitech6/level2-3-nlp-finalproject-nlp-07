@@ -161,7 +161,6 @@ const MultiTrackView = (props) => {
   // Play Midi in soundfont instruments
   const playInstrument = () => {
     const acTime = audioContext.currentTime;
-    console.log(`bpm: ${bpm}`)
     midiFile &&
       midiFile.tracks.forEach((track, idx) => {
         let inst = instrumentMap[track.instrument.number];
@@ -559,13 +558,12 @@ const MultiTrackView = (props) => {
       <Row className="mt-3" style={{ color: "gray" }}>
         <Col xs={2}>
           {/* <div>Total Time: {(totalMs / 1000).toFixed(1)} (s)</div> */}
-          <div hidden={props.isMobileDevice === true}>
+          <div hidden={!midiFile || props.isMobileDevice === true}>
             <span>{(currentTime / 1000).toFixed(1)} (s)</span>
             <span> / {(totalMs / 1000).toFixed(1)} (s), </span>
             <span>BPM: {Math.round(bpm)}</span>
           </div>
           <div>
-
           </div>
         </Col>
         <Col xs={9} style={progressBarStyle} className="mb-2 p-0 pe-1">

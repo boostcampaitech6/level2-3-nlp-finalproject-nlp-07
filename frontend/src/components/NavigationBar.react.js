@@ -45,6 +45,7 @@ function NavBar(props) {
                         </NavDropdown> */}
                     </Nav>
                     <Navbar.Text
+                        hidden={props.isMobileDevice === true}
                         style={{ textAlign: "right", fontSize: "0.6em" }}
                         className="m-0 p-0"
                     >
