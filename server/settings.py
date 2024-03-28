@@ -14,13 +14,14 @@ def create_folder_if_not_exists(folder_path):
 
 config = load_config('config.json')
 
-MODEL_DIR = config['MODEL_DIR']
 GENERATE_MODEL_NAME = config['GENERATE_MODEL_NAME']
-FRONT_MODEL_NAME = config['FRONT_MODEL_NAME']   # hugging face
-PICKLE_PATH = config['PICKLE_PATH']
+FRONT_MODEL_NAME = config['FRONT_MODEL_NAME']
+ANTICIPATION_MODEL_NAME = config['ANTICIPATION_MODEL_NAME']
+PICKLE_DIR = config['PICKLE_DIR']
+LABEL_PICKLE_PATH = config['LABEL_PICKLE_PATH']
 GENRE_INSTRUMENTS_PICKLE_PATH = config['GENRE_INSTRUMENTS_PICKLE_PATH']
 TEMP_DIR = config['TEMP_DIR']
 
 
-create_folder_if_not_exists(MODEL_DIR)
+create_folder_if_not_exists(PICKLE_DIR)
 create_folder_if_not_exists(TEMP_DIR)

@@ -7,7 +7,7 @@ from typing import Optional, Tuple, Union
 from tqdm import tqdm
 import pickle
 import os
-from settings import MODEL_DIR, FRONT_MODEL_NAME, PICKLE_PATH
+from settings import FRONT_MODEL_NAME, PICKLE_DIR, LABEL_PICKLE_PATH
 
 
 class customBertForSequenceClassification(BertPreTrainedModel):
@@ -181,7 +181,7 @@ class customRobertaForSequenceClassification(BertPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-        
+
 def id2labelData_labels(label_data_path ='./labels.pkl'):
     with open(label_data_path,'rb') as f:
         labels_data=pickle.load(f)
@@ -204,7 +204,7 @@ def extract_condition(text, front_model, front_tokenizer):
     tempo_id = int(result[1].detach().argmax())
     genre_id = int(result[2].detach().argmax())
 
-    pickle_path = os.path.join(MODEL_DIR, PICKLE_PATH)
+    pickle_path = os.path.join(PICKLE_DIR, LABEL_PICKLE_PATH)
     emotion_dict , tempo_dict, genre_dict = id2labelData_labels(pickle_path)
 
     emotion , tempo, genre = emotion_dict[emotion_id], tempo_dict[tempo_id], genre_dict[genre_id]

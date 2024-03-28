@@ -2,7 +2,7 @@ import torch
 from transformers import GPT2LMHeadModel
 from miditok import MMM, TokenizerConfig
 import os
-from settings import MODEL_DIR, GENERATE_MODEL_NAME
+from settings import GENERATE_MODEL_NAME
 from utils.data_processing import get_instruments_for_generate_model
 from utils.tokenizer_converter import mmm_to_nnn, nnn_to_mmm
 from tokenizer_svr import get_nnn_tokenizer, get_nnn_meta_tokenizer
@@ -14,7 +14,6 @@ EOS_TOKEN = "Track_End"
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def initialize_generate_model():
-    # model_path = os.path.join(MODEL_DIR, GENERATE_MODEL_NAME)
     model = GPT2LMHeadModel.from_pretrained(GENERATE_MODEL_NAME).to(DEVICE)
 
     tokenizer = get_nnn_meta_tokenizer(4)
@@ -91,14 +90,14 @@ def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperatur
             current_track_ids = torch.empty(1, 0).to(DEVICE)
             logging.info(f"input : {input_text}")
 
-        token_list = [tokenizer[token] for token in input_text.split()]
-        token_ids = torch.tensor([token_list]).to(DEVICE)
-        input_ids = torch.cat((current_track_ids, token_ids), dim=1).to(torch.int64)
+            token_list = [tokenizer[token] for token in input_text.split()]
+            token_ids = torch.tensor([token_list]).to(DEVICE)
+            input_ids = torch.cat((current_track_ids, token_ids), dim=1).to(torch.int64)
 
         generated_ids = generate_additional_track(input_ids, model, tokenizer, temperature)
 
         if check_track_condition(tokenizer, generated_ids):
-            current_track_ids = generated_ids
+            input_ids = generated_ids
             track_counter += 1
 
         if track_counter >= 4:
@@ -107,7 +106,6 @@ def generate_initial_track(model, tokenizer, condition, top_tracks=5, temperatur
     mmm_tokens_ids = nnn_to_mmm(generated_ids[0].tolist(), tokenizer)
     mmm_tokens_ids = mmm_tokens_ids[:3] + mmm_tokens_ids[4:] # remove tempo token at index 3
     
-    # logging.info(mmm_tokens_ids)
     midi_data = tokenizer.tokens_to_midi(mmm_tokens_ids)
     return midi_data
 

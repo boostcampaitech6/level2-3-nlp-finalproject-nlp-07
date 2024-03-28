@@ -1,11 +1,11 @@
 import os
 import pickle
 import random
-from settings import MODEL_DIR, GENRE_INSTRUMENTS_PICKLE_PATH
+from settings import PICKLE_DIR, GENRE_INSTRUMENTS_PICKLE_PATH
 
 def get_instruments_for_generate_model(condition):
     emotion, tempo, genre = condition
-    genre_instruments_path = os.path.join(MODEL_DIR, GENRE_INSTRUMENTS_PICKLE_PATH)
+    genre_instruments_path = os.path.join(PICKLE_DIR, GENRE_INSTRUMENTS_PICKLE_PATH)
     with open(genre_instruments_path, 'rb') as f:
         loaded_genre_instruments = pickle.load(f)
 
