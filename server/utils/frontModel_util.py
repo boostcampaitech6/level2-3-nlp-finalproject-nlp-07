@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from transformers import BertPreTrainedModel, RobertaModel, BertModel, AutoTokenizer
+from transformers import BertPreTrainedModel, RobertaPreTrainedModel, RobertaModel, BertModel, AutoTokenizer
 from transformers.modeling_outputs import SequenceClassifierOutput
 from typing import Optional, Tuple, Union
 
@@ -88,7 +88,7 @@ class customBertForSequenceClassification(BertPreTrainedModel):
             attentions=outputs.attentions,
         )
 
-class customRobertaForSequenceClassification(BertPreTrainedModel):
+class customRobertaForSequenceClassification(RobertaPreTrainedModel):
     def __init__(self, config, num_labels1 = None, num_labels2 = None, num_labels3 = None ):
         super().__init__(config)
         self.num_labels1 = config.num_labels1
@@ -197,7 +197,7 @@ def initialize_front_model():
     return model, tokenizer
 
 def extract_condition(text, front_model, front_tokenizer):
-    inputs = front_tokenizer(text, return_tensors='pt')
+    inputs = front_tokenizer(text.lower(), return_tensors='pt')
     result = front_model(**inputs).logits
 
     emotion_id = int(result[0].detach().argmax())
