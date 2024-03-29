@@ -87,7 +87,6 @@ class customBertForSequenceClassification(BertPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-
 class customRobertaForSequenceClassification(RobertaPreTrainedModel):
     def __init__(self, config, num_labels1 = None, num_labels2 = None, num_labels3 = None ):
         super().__init__(config)
@@ -96,7 +95,9 @@ class customRobertaForSequenceClassification(RobertaPreTrainedModel):
         self.num_labels3 = config.num_labels3
         
         self.config = config
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
+        self.dense1 = nn.Linear(config.hidden_size, config.hidden_size)
+        self.dense2 = nn.Linear(config.hidden_size, config.hidden_size)
+        self.dense3 = nn.Linear(config.hidden_size, config.hidden_size)
         
         self.roberta = RobertaModel(config, add_pooling_layer=False)
         classifier_dropout = (
@@ -144,20 +145,22 @@ class customRobertaForSequenceClassification(RobertaPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-
+        
         pooled_output = outputs[0]
         pooled_output = pooled_output[:, 0, :]
-        pooled_output = self.dropout(pooled_output)
-        output1 = self.dense(pooled_output)
+        
+        output1 = self.dropout(pooled_output)
+        output1 = self.dense1(pooled_output)
         output1 = torch.tanh(output1)
         output1 = self.dropout(output1)
 
-        output2 = self.dense(pooled_output)
+        output2 = self.dropout(pooled_output)
+        output2 = self.dense2(pooled_output)
         output2 = torch.tanh(output2)
         output2 = self.dropout(output2)
 
-
-        output3 = self.dense(pooled_output)
+        output3 = self.dropout(pooled_output)
+        output3 = self.dense3(pooled_output)
         output3 = torch.tanh(output3)
         output3 = self.dropout(output3)
 
@@ -181,6 +184,7 @@ class customRobertaForSequenceClassification(RobertaPreTrainedModel):
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
 
 def id2labelData_labels(label_data_path ='./labels.pkl'):
     with open(label_data_path,'rb') as f:
