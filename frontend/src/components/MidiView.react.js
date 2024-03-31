@@ -53,6 +53,7 @@ const MidiView = (props) => {
     const [isAdding, setIsAdding] = useState(false);
     const [isExtending, setIsExtending] = useState(false);
     const [isInfilling, setIsInfilling] = useState(false);
+    const [isDownloading, setIsDownloading] = useState(false);
     const [totalBars, setTotalBars] = useState(4);
     const [barsToRegen, setBarsToRegen] = useState([0, 3]);
     const [currentInstruments, setCurrentInstruments] = useState([]);
@@ -181,6 +182,12 @@ const MidiView = (props) => {
                 "totalBars": totalBars,
             })
             setIsInfilling(true);
+        } else if (operateType === "audio") {
+            url = "https://voi1e5815l.execute-api.ap-northeast-2.amazonaws.com/default/codeplayMidiToAudio";
+            bodyData = JSON.stringify({
+                "midi": base64Data,
+            })
+            setIsDownloading(true);
         }
 
         // Make the POST request using fetch
@@ -197,10 +204,175 @@ const MidiView = (props) => {
                 function readResponseBody(reader) {
                     return reader.read().then(async ({ done, value }) => {
                         if (done) {
-                            // console.log('Response body fully received');
+                            console.log('Response body fully received');
                             try {
-                                // console.log(value)
-                                console.log("Response body fully received");
+                                var numericValues = receivedData.split(',').map(function (item) {
+                                    return parseInt(item.trim(), 10); // Convert each item to an integer
+                                });
+                                var uint8Array = new Uint8Array(numericValues);
+                                // Uint8Array 디코딩
+                                const string = new TextDecoder().decode(uint8Array);
+                                let modifiedStr = string.substring(1, string.length - 1);
+
+                                const dataURI = `data:audio/midi;base64,${modifiedStr}`
+                                const dataURItoBlob = (dataURI) => {
+
+                                    const byteString = atob(dataURI.split(',')[1]);
+                                    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+                                    let ab = new ArrayBuffer(byteString.length);
+                                    let ia = new Uint8Array(ab);
+                                    for (let i = 0; i < byteString.length; i++) {
+                                        ia[i] = byteString.charCodeAt(i);
+                                    }
+
+                                    return new Blob([ab], { type: mimeString });
+                                };
+
+                                const arrayBuffer = await readFileAsArrayBuffer(dataURItoBlob(dataURI));
+
+                                // operateType에 따라 나눠서 응답 미디 파일 처리
+                                if (operateType === "extend" || operateType === "infill") {
+
+                                    const midi = new Midi(arrayBuffer)
+                                    console.log(instrumentObject);
+                                    console.log(midiFile);
+
+                                    // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
+                                    const tempTrackInstOrder = {}
+                                    Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                        if (track.instrument.percussion) {
+                                            tempTrackInstOrder[-1] = idx;
+                                        } else {
+                                            tempTrackInstOrder[track.instrument.number] = idx;
+                                        }
+                                    })
+
+                                    console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
+
+                                    const trackSort = (a, b) => {
+                                        if (a.instrument.percussion) {
+                                            const orderA = tempTrackInstOrder[-1];
+                                            const orderB = tempTrackInstOrder[b.instrument.number];
+                                            return orderA - orderB;
+                                        } else if (b.instrument.percussion) {
+                                            const orderA = tempTrackInstOrder[a.instrument.number];
+                                            const orderB = tempTrackInstOrder[-1];
+                                            return orderA - orderB;
+                                        } else {
+                                            const orderA = tempTrackInstOrder[a.instrument.number];
+                                            const orderB = tempTrackInstOrder[b.instrument.number];
+                                            return orderA - orderB;
+                                        }
+                                    };
+                                    midi.tracks.sort(trackSort);
+                                    console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
+                                    console.log(`midi after sort: ${midi}`)
+
+                                    // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
+                                    const tempInstNameObject = {}
+
+                                    Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                        tempInstNameObject[idx] = track.name;
+                                    })
+
+                                    midi.tracks.forEach((track, idx) => {
+                                        track.name = tempInstNameObject[idx];
+                                    })
+                                    setMidiFile(midi);
+                                    
+                                } else if (operateType === "add") {
+                                    
+                                    const midi = new Midi(arrayBuffer)
+                                    const lastTrack = midi.tracks[midi.tracks.length - 1];
+                                    const newMidi = midiFile.clone();
+                                    newMidi.tracks.push(lastTrack);
+                                    setMidiFile(newMidi);
+                                    setAddInstNum(999);
+
+                                } else if (operateType === "regen") {
+
+                                    const midi = new Midi(arrayBuffer)
+                                    const lastTrack = midi.tracks[midi.tracks.length - 1];
+                                    const newMidi = midiFile.clone()
+                                    newMidi.tracks[regenTrackIdx] = lastTrack;
+                                    setMidiFile(newMidi);
+                                    setRegenTrackIdx(null);
+
+                                } else if (operateType === "audio") {
+
+                                    // console.log(value)
+                                    console.log(`receivedData: ${receivedData}`);
+                                    console.log(`receivedData Type: ${typeof receivedData}`);
+
+                                    // Parse the string and extract the numeric values
+                                    var numericValues = receivedData.split(',').map(function (item) {
+                                        return parseInt(item.trim(), 10); // Convert each item to an integer
+                                    });
+
+                                    // Create a Uint8Array from the numeric values
+                                    var uint8Array = new Uint8Array(numericValues);
+                                    console.log(`uint8Array: ${uint8Array}`)
+                                    console.log(`uint8Array type: ${typeof uint8Array}`)
+
+                                    const string = new TextDecoder().decode(uint8Array);
+                                    console.log(`string: ${string}`)
+                                    let modifiedStr = string.substring(1, string.length - 1);
+                                    console.log(`modifiedStringBack: ${modifiedStr}`)
+                                    // console.log("Response body fully received");
+
+                                    // const dataURI = `data:audio/midi;base64,${modifiedStr}`
+                                    // const dataURItoBlob = (dataURI) => {
+
+                                    //     const byteString = atob(dataURI.split(',')[1]);
+                                    //     const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+
+                                    //     let ab = new ArrayBuffer(byteString.length);
+                                    //     let ia = new Uint8Array(ab);
+                                    //     for (let i = 0; i < byteString.length; i++) {
+                                    //         ia[i] = byteString.charCodeAt(i);
+                                    //     }
+
+                                    //     return new Blob([ab], { type: mimeString });
+                                    // };
+
+                                    // // console.log(arrayBuffer);
+                                    // const wavBlob = dataURItoBlob(dataURI)
+                                    // const blobUrl = URL.createObjectURL(wavBlob);
+
+                                    // Decode the base64 string
+                                    var binaryString = atob(modifiedStr);
+
+                                    // Convert the binary string to a typed array
+                                    var bytes = new Uint8Array(binaryString.length);
+                                    for (var i = 0; i < binaryString.length; i++) {
+                                        bytes[i] = binaryString.charCodeAt(i);
+                                    }
+
+                                    // Create a Blob object from the typed array
+                                    var blob = new Blob([bytes], { type: "audio/mpeg" });
+
+                                    // Optionally, you can create a URL for the blob
+                                    var blobUrl = URL.createObjectURL(blob);
+
+                                    // Create a download link
+                                    const downloadLink = document.createElement('a');
+                                    downloadLink.href = blobUrl;
+                                    downloadLink.download = `generated_mp3.mp3`;
+
+                                    // Append the link to the document body
+                                    document.body.appendChild(downloadLink);
+
+                                    // Trigger the click event on the link
+                                    downloadLink.click();
+
+                                    // Remove the link from the document body
+                                    document.body.removeChild(downloadLink);
+
+                                    // Revoke the Blob URL to free up resources
+                                    URL.revokeObjectURL(blobUrl);
+                                    setIsDownloading(false)
+                                }
                             } catch (error) {
                                 console.error('Error reading file as array buffer:', error);
                             }
@@ -210,92 +382,6 @@ const MidiView = (props) => {
                         // Process the received chunk of data (value) here
                         // console.log('Received chunk of data:', value);
 
-                        // Uint8Array 디코딩
-                        const string = new TextDecoder().decode(value);
-                        let modifiedStr = string.substring(1, string.length - 1);
-
-                        const dataURI = `data:audio/midi;base64,${modifiedStr}`
-                        const dataURItoBlob = (dataURI) => {
-
-                            const byteString = atob(dataURI.split(',')[1]);
-                            const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
-
-                            let ab = new ArrayBuffer(byteString.length);
-                            let ia = new Uint8Array(ab);
-                            for (let i = 0; i < byteString.length; i++) {
-                                ia[i] = byteString.charCodeAt(i);
-                            }
-
-                            return new Blob([ab], { type: mimeString });
-                        };
-
-                        const arrayBuffer = await readFileAsArrayBuffer(dataURItoBlob(dataURI));
-                        const midi = new Midi(arrayBuffer)
-
-                        // operateType에 따라 나눠서 응답 미디 파일 처리
-                        if (operateType === "extend" || operateType === "infill") {
-
-                            console.log(instrumentObject);
-                            console.log(midiFile);
-
-                            // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
-                            const tempTrackInstOrder = {}
-                            Object.entries(midiFile.tracks).forEach(([idx, track]) => {
-                                if (track.instrument.percussion) {
-                                    tempTrackInstOrder[-1] = idx;
-                                } else {
-                                    tempTrackInstOrder[track.instrument.number] = idx;
-                                }
-                            })
-
-                            console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
-
-                            const trackSort = (a, b) => {
-                                if (a.instrument.percussion) {
-                                    const orderA = tempTrackInstOrder[-1];
-                                    const orderB = tempTrackInstOrder[b.instrument.number];
-                                    return orderA - orderB;
-                                } else if (b.instrument.percussion) {
-                                    const orderA = tempTrackInstOrder[a.instrument.number];
-                                    const orderB = tempTrackInstOrder[-1];
-                                    return orderA - orderB;
-                                } else {
-                                    const orderA = tempTrackInstOrder[a.instrument.number];
-                                    const orderB = tempTrackInstOrder[b.instrument.number];
-                                    return orderA - orderB;
-                                }
-                            };
-                            midi.tracks.sort(trackSort);
-                            console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
-                            console.log(`midi after sort: ${midi}`)
-
-                            // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
-                            const tempInstNameObject = {}
-
-                            Object.entries(midiFile.tracks).forEach(([idx, track]) => {
-                                tempInstNameObject[idx] = track.name;
-                            })
-                            console.log(`tempInstNameObject: ${tempInstNameObject}`);
-                            // console.log(typeof midi);
-
-                            midi.tracks.forEach((track, idx) => {
-                                track.name = tempInstNameObject[idx];
-                            })
-
-                            setMidiFile(midi);
-                        } else if (operateType === "add") {
-                            const lastTrack = midi.tracks[midi.tracks.length - 1];
-                            const newMidi = midiFile.clone();
-                            newMidi.tracks.push(lastTrack);
-                            setMidiFile(newMidi);
-                            setAddInstNum(999);
-                        } else if (operateType === "regen") {
-                            const lastTrack = midi.tracks[midi.tracks.length - 1];
-                            const newMidi = midiFile.clone()
-                            newMidi.tracks[regenTrackIdx] = lastTrack;
-                            setMidiFile(newMidi);
-                            setRegenTrackIdx(null);
-                        }
                         receivedData += value;
 
                         // Continue reading the next chunk of data
@@ -309,6 +395,7 @@ const MidiView = (props) => {
                 setIsAdding(false);
                 setIsExtending(false);
                 setIsInfilling(false);
+                setIsDownloading(false);
             })
             .catch(error => {
                 props.setShowErrorModal(true);
@@ -316,6 +403,7 @@ const MidiView = (props) => {
                 setIsAdding(false);
                 setIsExtending(false);
                 setIsInfilling(false);
+                setIsDownloading(false);
             });
     }
 
@@ -374,6 +462,37 @@ const MidiView = (props) => {
                 console.error('Error downloading MIDI file:', error)
             }
         }
+    }
+
+    const handleDownloadAudio = () => {
+        // if (midiFile) {
+        //     try {
+        //         const midiArray = midiFile.toArray()
+        //         const midiBlob = new Blob([midiArray])
+        //         // Create a Blob URL for the data
+        //         const blobUrl = URL.createObjectURL(midiBlob);
+
+        //         // Create a download link
+        //         const downloadLink = document.createElement('a');
+        //         downloadLink.href = blobUrl;
+        //         downloadLink.download = `generated_midi.mid`;
+
+        //         // Append the link to the document body
+        //         document.body.appendChild(downloadLink);
+
+        //         // Trigger the click event on the link
+        //         downloadLink.click();
+
+        //         // Remove the link from the document body
+        //         document.body.removeChild(downloadLink);
+
+        //         // Revoke the Blob URL to free up resources
+        //         URL.revokeObjectURL(blobUrl);
+        //     } catch (error) {
+        //         console.error('Error downloading MIDI file:', error)
+        //     }
+        // }
+        sendMidiToServerLambda({ operateType: "audio", midi: midiFile });
     }
 
     const handleLoadSampleMidi = async (sampleMidiPath) => {
@@ -439,7 +558,16 @@ const MidiView = (props) => {
                                     size={props.isMobileDevice && "sm"}
                                     disabled={props.isGenerating || isAdding || isExtending || isInfilling}
                                 >
-                                    Download Current MIDI
+                                    Download MIDI
+                                </Button>
+                                <Button
+                                    className="float-start ms-2"
+                                    variant="outline-dark"
+                                    onClick={handleDownloadAudio}
+                                    size={props.isMobileDevice && "sm"}
+                                    disabled={props.isGenerating || isAdding || isExtending || isInfilling}
+                                >
+                                    Download MP3
                                 </Button>
                                 {/* <SampleMidiDropdown
                                     sampleTitle={sampleTitle}
