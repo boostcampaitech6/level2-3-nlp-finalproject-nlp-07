@@ -6,6 +6,8 @@ import Row from 'react-bootstrap/Row'
 import Col from 'react-bootstrap/Col';
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/DropdownButton";
 
 import MultiTrackView from './MultiTrackView.react.js'
 import SampleMidiDropdown from "../utils/SampleMidiDropdown.js";
@@ -207,8 +209,10 @@ const MidiView = (props) => {
                             console.log('Response body fully received');
                             try {
                                 if (operateType !== "audio") {
+
+                                    // Remove the last comma character
                                     receivedData = receivedData.substring(0, receivedData.length - 1);
-                                    console.log(`receivedDatanotaudio: ${receivedData}`)
+
                                     var numericValues = receivedData.split(',').map(function (item) {
                                         return parseInt(item.trim(), 10); // Convert each item to an integer
                                     });
@@ -239,8 +243,9 @@ const MidiView = (props) => {
                                     if (operateType === "extend" || operateType === "infill") {
 
                                         const midi = new Midi(arrayBuffer)
-                                        console.log(instrumentObject);
-                                        console.log(midiFile);
+
+                                        // console.log(instrumentObject);
+                                        // console.log(midiFile);
 
                                         // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
                                         const tempTrackInstOrder = {}
@@ -251,8 +256,6 @@ const MidiView = (props) => {
                                                 tempTrackInstOrder[track.instrument.number] = idx;
                                             }
                                         })
-
-                                        console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
 
                                         const trackSort = (a, b) => {
                                             if (a.instrument.percussion) {
@@ -270,8 +273,8 @@ const MidiView = (props) => {
                                             }
                                         };
                                         midi.tracks.sort(trackSort);
-                                        console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
-                                        console.log(`midi after sort: ${midi}`)
+                                        // console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
+                                        // console.log(`midi after sort: ${midi}`)
 
                                         // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
                                         const tempInstNameObject = {}
@@ -306,10 +309,8 @@ const MidiView = (props) => {
                                     }
                                 } else if (operateType === "audio") {
 
-                                    // console.log(value)
+                                    // Remove the last comma character
                                     receivedData = receivedData.substring(0, receivedData.length - 1);
-                                    console.log(`receivedData: ${receivedData}`);
-                                    console.log(`receivedData Type: ${typeof receivedData}`);
 
                                     // Parse the string and extract the numeric values
                                     var numericValues = receivedData.split(',').map(function (item) {
@@ -318,21 +319,11 @@ const MidiView = (props) => {
 
                                     // Create a Uint8Array from the numeric values
                                     var uint8Array = new Uint8Array(numericValues);
-                                    console.log(`uint8Array: ${uint8Array}`)
-                                    console.log(`uint8Array type: ${typeof uint8Array}`)
-
-                                    // const checkArr = [34, 43, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]
-                                    // const filteredArr = uint8Array.filter(num => checkArr.includes(num));
 
                                     // const string = new TextDecoder().decode(uint8Array);
                                     const string = new TextDecoder('utf-8').decode(uint8Array);
-                                    // const string = new TextDecoder('utf-8').decode(filteredArr);
-                                    // console.log(`string: ${string}`)
                                     let modifiedStr = string.substring(1, string.length - 1);
-                                    console.log(`modifiedStr: ${modifiedStr}`)
                                     // console.log("Response body fully received");
-
-                                    console.log(atob(modifiedStr))
 
                                     const dataURI = `data:audio/mpeg;base64,${modifiedStr}`
                                     const dataURItoBlob = (dataURI) => {
@@ -352,21 +343,6 @@ const MidiView = (props) => {
                                     // console.log(arrayBuffer);
                                     const wavBlob = dataURItoBlob(dataURI)
                                     const blobUrl = URL.createObjectURL(wavBlob);
-
-                                    // // Decode the base64 string
-                                    // var binaryString = atob(modifiedStr);
-
-                                    // // Convert the binary string to a typed array
-                                    // var bytes = new Uint8Array(binaryString.length);
-                                    // for (var i = 0; i < binaryString.length; i++) {
-                                    //     bytes[i] = binaryString.charCodeAt(i);
-                                    // }
-
-                                    // // Create a Blob object from the typed array
-                                    // var blob = new Blob([bytes], { type: "audio/mpeg" });
-
-                                    // // Optionally, you can create a URL for the blob
-                                    // var blobUrl = URL.createObjectURL(blob);
 
                                     // Create a download link
                                     const downloadLink = document.createElement('a');
@@ -565,24 +541,28 @@ const MidiView = (props) => {
                     {midiFile ?
                         <Row className="mt-3">
                             <Col>
-                                <Button
-                                    className="float-start"
-                                    variant="outline-dark"
-                                    onClick={handleDownloadMidi}
-                                    size={props.isMobileDevice && "sm"}
-                                    disabled={props.isGenerating || isAdding || isExtending || isInfilling}
-                                >
-                                    Download MIDI
-                                </Button>
-                                <Button
+                                <DropdownButton
+                                    as={ButtonGroup}
                                     className="float-start ms-2"
+                                    title={isDownloading ? "Downloading..." : "Download"}
                                     variant="outline-dark"
-                                    onClick={handleDownloadAudio}
-                                    size={props.isMobileDevice && "sm"}
-                                    disabled={props.isGenerating || isAdding || isExtending || isInfilling}
+                                    disabled={isDownloading || props.isGenerating || isAdding || isExtending || isInfilling}
                                 >
-                                    Download MP3
-                                </Button>
+                                    <Dropdown.Item
+                                        as="button"
+                                        key="0"
+                                        onClick={handleDownloadMidi}
+                                    >
+                                        <span>MIDI File (.mid)</span>
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                        as="button"
+                                        key="1"
+                                        onClick={handleDownloadAudio}
+                                    >
+                                        <span>Audio File (.mp3)</span>
+                                    </Dropdown.Item>
+                                </DropdownButton>
                                 {/* <SampleMidiDropdown
                                     sampleTitle={sampleTitle}
                                     handleLoadSampleMidi={handleLoadSampleMidi}
