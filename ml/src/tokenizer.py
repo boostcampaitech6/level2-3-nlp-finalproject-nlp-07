@@ -1,6 +1,10 @@
 from miditok import MMM, TokenizerConfig
 from typing import Union, Optional
 from pathlib import Path
+import numpy as np
+from symusic import Score, TimeSignature
+from miditok.constants import TIME_SIGNATURE
+from miditok.utils import get_midi_ticks_per_beat
 
 class CodeplayTokenizer(MMM):
     def __init__(self, config: TokenizerConfig):
@@ -47,6 +51,113 @@ class CodeplayTokenizer(MMM):
             return self.push_to_hub(repo_id=repo_id, **kwargs)
         return None
 
+    def preprocess_midi(self, midi: Score) -> Score:
+        r"""
+        Pre-process a MIDI file to resample its time and events values.
+
+        This method is called before parsing a MIDI's contents for tokenization.
+        Its notes attributes (times, pitches, velocities) will be downsampled and
+        sorted, duplicated notes removed, as well as tempos. Empty tracks (with no
+        note) will be removed from the MIDI object. Notes with pitches
+        outside ``self.config.pitch_range`` will be deleted.
+
+        :param midi: MIDI object to preprocess.
+        """
+        # Filter time signatures.
+        # We need to do this first to determine the MIDI's new time division.
+        if self.config.use_time_signatures:
+            self._filter_unsupported_time_signatures(midi.time_signatures)
+            # We mock the first with 0, even if there are already time signatures. This
+            # is required as if the MIDI only had */2 time signatures, we must make
+            # sure the resampling tpq is calculated according to a maximum denom of 4
+            # if the beginning of the MIDI is mocked at 4/4.
+            if len(midi.time_signatures) == 0 or midi.time_signatures[0].time != 0:
+                midi.time_signatures.insert(0, TimeSignature(0, *TIME_SIGNATURE))
+            # The new time division is chosen depending on its highest time signature
+            # denominator, and is equivalent to the highest possible tick/beat ratio.
+            max_midi_denom = max(ts.denominator for ts in midi.time_signatures)
+            new_tpq = int(self.config.max_num_pos_per_beat * max_midi_denom / 4)
+        else:
+            new_tpq = self.config.max_num_pos_per_beat
+
+        # Resample time (not inplace)
+        if midi.ticks_per_quarter != new_tpq:
+            midi = midi.resample(new_tpq, min_dur=1)
+
+        # Merge instruments of the same program / inst before preprocessing them.
+        # This allows to avoid potential duplicated notes in some multitrack settings
+        # This can however mess up chord detections.
+        # if self.config.use_programs and self.one_token_stream:
+        #     merge_same_program_tracks(midi.tracks)
+
+        # Process time signature changes
+        # We need to do it before computing the ticks_per_beat sections
+        if self.config.use_time_signatures and len(midi.time_signatures) > 0:
+            self._preprocess_time_signatures(
+                midi.time_signatures, midi.ticks_per_quarter
+            )
+
+        # Compute resampling ratios to update times of events when several time sig,
+        # and ticks per beat ratios.
+        # Resampling factors are used to resample times of events when the MIDI has
+        # several different time signature denominators.
+        # ticks_per_beat ratios are used to adjust durations values according to the
+        # the tokenizer's vocabulary, i.e. *Duration* tokens.
+        if not self._note_on_off or (
+            self.config.use_sustain_pedals and self.config.sustain_pedal_duration
+        ):
+            if self.config.use_time_signatures:
+                ticks_per_beat = get_midi_ticks_per_beat(midi)
+            else:
+                ticks_per_beat = np.array([[midi.end(), midi.ticks_per_quarter]])
+        else:
+            ticks_per_beat = None
+        if (
+            self.config.use_time_signatures
+            and len({ts.denominator for ts in midi.time_signatures}) > 1
+        ):
+            tpq_resampling_factors = self._get_midi_resampling_factor(midi)
+        else:
+            tpq_resampling_factors = None
+
+        # Preprocess track events
+        for t in range(len(midi.tracks) - 1, -1, -1):
+            if len(midi.tracks[t].notes) == 0:
+                del midi.tracks[t]
+                continue
+            # Preprocesses notes
+            midi.tracks[t].notes = self._preprocess_notes(
+                midi.tracks[t].notes,
+                midi.tracks[t].is_drum,
+                tpq_resampling_factors,
+                ticks_per_beat,
+            )
+
+            if len(midi.tracks[t].notes) == 0:
+                del midi.tracks[t]
+                continue
+
+            # Resample pitch bend values
+            if self.config.use_pitch_bends and len(midi.tracks[t].pitch_bends) > 0:
+                midi.tracks[t].pitch_bends = self._preprocess_pitch_bends(
+                    midi.tracks[t].pitch_bends, tpq_resampling_factors
+                )
+
+            # Resample pedals durations
+            if self.config.use_sustain_pedals and len(midi.tracks[t].pedals) > 0:
+                midi.tracks[t].pedals = self._preprocess_pedals(
+                    midi.tracks[t].pedals, tpq_resampling_factors, ticks_per_beat
+                )
+
+        # Process tempo changes
+        if self.config.use_tempos:
+            midi.tempos = self._preprocess_tempos(midi.tempos, tpq_resampling_factors)
+
+        # We do not change key signature changes, markers and lyrics here as they are
+        # not used by MidiTok (yet)
+
+        return midi
+        
 GENRE_TOKEN_LIST = ['Rock', 'Pop', 'Jazz']
 GENRE_TOKEN_LIST = ['Genre_Unk'] + ['Genre_'+genre for genre in GENRE_TOKEN_LIST]
 GENRE_TOKEN_LIST += ['Genre_'+str(i+1) for i in range(40-len(GENRE_TOKEN_LIST))] #40
