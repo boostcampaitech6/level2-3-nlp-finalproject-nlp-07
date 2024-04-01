@@ -60,6 +60,7 @@ const MidiView = (props) => {
     const [barsToRegen, setBarsToRegen] = useState([0, 3]);
     const [currentInstruments, setCurrentInstruments] = useState([]);
     const [infillHighlightBar, setInfillHighlightBar] = useState();
+    const [undoSteps, setUndoSteps] = useState([]);
 
 
     // 서버에서 생성해서 반환해준 미디 파일을 멀티트랙 뷰로 넘겨줌
@@ -68,6 +69,7 @@ const MidiView = (props) => {
             try {
                 const newMidiFile = new Midi(props.midiBlob);
                 setMidiFile(newMidiFile);
+                setUndoSteps([]);
             } catch (error) {
                 console.error('Error parsing MIDI file:', error);
             }
@@ -89,7 +91,7 @@ const MidiView = (props) => {
                     instrumentsArray.push(-1) :
                     instrumentsArray.push(track.instrument.number);
             })
-            console.log(instrumentsArray);
+            // console.log(instrumentsArray);
             setCurrentInstruments(instrumentsArray);
         }
     }, [midiFile])
@@ -149,6 +151,9 @@ const MidiView = (props) => {
 
     // 현재 MIDI File을 서버에 보내고, 추가 혹은 수정된 미디 파일을 받는 함수
     const sendMidiToServerLambda = ({ operateType, midi, instNum, regenBarIndex, regenPart }) => {
+
+        // Save current MIDI file to cache
+        cacheMidiState();
 
         // Create FormData object
         const midiArray = midi.toArray()
@@ -455,34 +460,37 @@ const MidiView = (props) => {
     }
 
     const handleDownloadAudio = () => {
-        // if (midiFile) {
-        //     try {
-        //         const midiArray = midiFile.toArray()
-        //         const midiBlob = new Blob([midiArray])
-        //         // Create a Blob URL for the data
-        //         const blobUrl = URL.createObjectURL(midiBlob);
-
-        //         // Create a download link
-        //         const downloadLink = document.createElement('a');
-        //         downloadLink.href = blobUrl;
-        //         downloadLink.download = `generated_midi.mid`;
-
-        //         // Append the link to the document body
-        //         document.body.appendChild(downloadLink);
-
-        //         // Trigger the click event on the link
-        //         downloadLink.click();
-
-        //         // Remove the link from the document body
-        //         document.body.removeChild(downloadLink);
-
-        //         // Revoke the Blob URL to free up resources
-        //         URL.revokeObjectURL(blobUrl);
-        //     } catch (error) {
-        //         console.error('Error downloading MIDI file:', error)
-        //     }
-        // }
         sendMidiToServerLambda({ operateType: "audio", midi: midiFile });
+    }
+
+    const cacheMidiState = () => {
+        setUndoSteps(prevSteps => [...prevSteps, midiFile.clone()]);
+    };
+
+    const undoMidiChange = () => {
+        if (undoSteps.length > 0) {
+            const prevState = undoSteps.pop();
+            setMidiFile(prevState);
+            // Optionally, you may want to update the UI or trigger MIDI playback with the reverted data
+            // For example:
+            setUndoSteps([...undoSteps]); // Update cached states
+        } else {
+            console.log("No more changes to undo.");
+        }
+    }
+
+    const handleSaveLocalStorage = () => {
+        const midiJSON = midiFile.toJSON();
+        localStorage.setItem('temp_midifile', JSON.stringify(midiJSON));
+    }
+
+    const handleLoadLocalStorage = () => {
+        const midiJSONString = localStorage.getItem('temp_midifile');
+        const midiJSON = JSON.parse(midiJSONString);
+        const midiData = new Midi();
+        // Populate MIDI object from JSON
+        midiData.fromJSON(midiJSON);
+        setMidiFile(midiData);
     }
 
     const handleLoadSampleMidi = async (sampleMidiPath) => {
@@ -543,7 +551,7 @@ const MidiView = (props) => {
                             <Col>
                                 <DropdownButton
                                     as={ButtonGroup}
-                                    className="float-start ms-2"
+                                    className="float-start"
                                     title={isDownloading ? "Downloading..." : "Download"}
                                     variant="outline-dark"
                                     disabled={isDownloading || props.isGenerating || isAdding || isExtending || isInfilling}
@@ -563,6 +571,29 @@ const MidiView = (props) => {
                                         <span>Audio File (.mp3)</span>
                                     </Dropdown.Item>
                                 </DropdownButton>
+                                {/* <Button
+                                    className="ms-2"
+                                    variant="outline-dark"
+                                    onClick={handleSaveLocalStorage}
+                                >
+                                    Save cache
+                                </Button> */}
+                                {/* <Button
+                                    className="ms-2"
+                                    variant="outline-dark"
+                                    onClick={handleLoadLocalStorage}
+                                    disabled={false}
+                                >
+                                    Load Cache
+                                </Button> */}
+                                <Button
+                                    className="ms-2"
+                                    variant="outline-dark"
+                                    onClick={undoMidiChange}
+                                    disabled={!undoSteps.length > 0}
+                                >
+                                    Undo
+                                </Button>
                                 {/* <SampleMidiDropdown
                                     sampleTitle={sampleTitle}
                                     handleLoadSampleMidi={handleLoadSampleMidi}
