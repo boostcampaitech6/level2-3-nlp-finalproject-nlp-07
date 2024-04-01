@@ -206,102 +206,108 @@ const MidiView = (props) => {
                         if (done) {
                             console.log('Response body fully received');
                             try {
-                                var numericValues = receivedData.split(',').map(function (item) {
-                                    return parseInt(item.trim(), 10); // Convert each item to an integer
-                                });
-                                var uint8Array = new Uint8Array(numericValues);
-                                // Uint8Array 디코딩
-                                const string = new TextDecoder().decode(uint8Array);
-                                let modifiedStr = string.substring(1, string.length - 1);
+                                if (operateType !== "audio") {
+                                    receivedData = receivedData.substring(0, receivedData.length - 1);
+                                    console.log(`receivedDatanotaudio: ${receivedData}`)
+                                    var numericValues = receivedData.split(',').map(function (item) {
+                                        return parseInt(item.trim(), 10); // Convert each item to an integer
+                                    });
+                                    var uint8Array = new Uint8Array(numericValues);
 
-                                const dataURI = `data:audio/midi;base64,${modifiedStr}`
-                                const dataURItoBlob = (dataURI) => {
+                                    // Uint8Array 디코딩
+                                    const string = new TextDecoder().decode(uint8Array);
+                                    let modifiedStr = string.substring(1, string.length - 1);
 
-                                    const byteString = atob(dataURI.split(',')[1]);
-                                    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                                    const dataURI = `data:audio/midi;base64,${modifiedStr}`
+                                    const dataURItoBlob = (dataURI) => {
 
-                                    let ab = new ArrayBuffer(byteString.length);
-                                    let ia = new Uint8Array(ab);
-                                    for (let i = 0; i < byteString.length; i++) {
-                                        ia[i] = byteString.charCodeAt(i);
-                                    }
+                                        const byteString = atob(dataURI.split(',')[1]);
+                                        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
 
-                                    return new Blob([ab], { type: mimeString });
-                                };
-
-                                const arrayBuffer = await readFileAsArrayBuffer(dataURItoBlob(dataURI));
-
-                                // operateType에 따라 나눠서 응답 미디 파일 처리
-                                if (operateType === "extend" || operateType === "infill") {
-
-                                    const midi = new Midi(arrayBuffer)
-                                    console.log(instrumentObject);
-                                    console.log(midiFile);
-
-                                    // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
-                                    const tempTrackInstOrder = {}
-                                    Object.entries(midiFile.tracks).forEach(([idx, track]) => {
-                                        if (track.instrument.percussion) {
-                                            tempTrackInstOrder[-1] = idx;
-                                        } else {
-                                            tempTrackInstOrder[track.instrument.number] = idx;
+                                        let ab = new ArrayBuffer(byteString.length);
+                                        let ia = new Uint8Array(ab);
+                                        for (let i = 0; i < byteString.length; i++) {
+                                            ia[i] = byteString.charCodeAt(i);
                                         }
-                                    })
 
-                                    console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
-
-                                    const trackSort = (a, b) => {
-                                        if (a.instrument.percussion) {
-                                            const orderA = tempTrackInstOrder[-1];
-                                            const orderB = tempTrackInstOrder[b.instrument.number];
-                                            return orderA - orderB;
-                                        } else if (b.instrument.percussion) {
-                                            const orderA = tempTrackInstOrder[a.instrument.number];
-                                            const orderB = tempTrackInstOrder[-1];
-                                            return orderA - orderB;
-                                        } else {
-                                            const orderA = tempTrackInstOrder[a.instrument.number];
-                                            const orderB = tempTrackInstOrder[b.instrument.number];
-                                            return orderA - orderB;
-                                        }
+                                        return new Blob([ab], { type: mimeString });
                                     };
-                                    midi.tracks.sort(trackSort);
-                                    console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
-                                    console.log(`midi after sort: ${midi}`)
 
-                                    // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
-                                    const tempInstNameObject = {}
+                                    const arrayBuffer = await readFileAsArrayBuffer(dataURItoBlob(dataURI));
 
-                                    Object.entries(midiFile.tracks).forEach(([idx, track]) => {
-                                        tempInstNameObject[idx] = track.name;
-                                    })
+                                    // operateType에 따라 나눠서 응답 미디 파일 처리
+                                    if (operateType === "extend" || operateType === "infill") {
 
-                                    midi.tracks.forEach((track, idx) => {
-                                        track.name = tempInstNameObject[idx];
-                                    })
-                                    setMidiFile(midi);
-                                    
-                                } else if (operateType === "add") {
-                                    
-                                    const midi = new Midi(arrayBuffer)
-                                    const lastTrack = midi.tracks[midi.tracks.length - 1];
-                                    const newMidi = midiFile.clone();
-                                    newMidi.tracks.push(lastTrack);
-                                    setMidiFile(newMidi);
-                                    setAddInstNum(999);
+                                        const midi = new Midi(arrayBuffer)
+                                        console.log(instrumentObject);
+                                        console.log(midiFile);
 
-                                } else if (operateType === "regen") {
+                                        // 1. 기존 MIDI 파일 트랙 순서 저장했다가 다시 덮어씌워주기
+                                        const tempTrackInstOrder = {}
+                                        Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                            if (track.instrument.percussion) {
+                                                tempTrackInstOrder[-1] = idx;
+                                            } else {
+                                                tempTrackInstOrder[track.instrument.number] = idx;
+                                            }
+                                        })
 
-                                    const midi = new Midi(arrayBuffer)
-                                    const lastTrack = midi.tracks[midi.tracks.length - 1];
-                                    const newMidi = midiFile.clone()
-                                    newMidi.tracks[regenTrackIdx] = lastTrack;
-                                    setMidiFile(newMidi);
-                                    setRegenTrackIdx(null);
+                                        console.log(`tempTrackInstOrder: ${JSON.stringify(tempTrackInstOrder)}`);
 
+                                        const trackSort = (a, b) => {
+                                            if (a.instrument.percussion) {
+                                                const orderA = tempTrackInstOrder[-1];
+                                                const orderB = tempTrackInstOrder[b.instrument.number];
+                                                return orderA - orderB;
+                                            } else if (b.instrument.percussion) {
+                                                const orderA = tempTrackInstOrder[a.instrument.number];
+                                                const orderB = tempTrackInstOrder[-1];
+                                                return orderA - orderB;
+                                            } else {
+                                                const orderA = tempTrackInstOrder[a.instrument.number];
+                                                const orderB = tempTrackInstOrder[b.instrument.number];
+                                                return orderA - orderB;
+                                            }
+                                        };
+                                        midi.tracks.sort(trackSort);
+                                        console.log(`midi.tracks: ${midi.tracks[0].instrument.number}`)
+                                        console.log(`midi after sort: ${midi}`)
+
+                                        // 2. 기존 MIDI 파일 트랙별 이름 저장했다가 다시 덮어씌워주기
+                                        const tempInstNameObject = {}
+
+                                        Object.entries(midiFile.tracks).forEach(([idx, track]) => {
+                                            tempInstNameObject[idx] = track.name;
+                                        })
+
+                                        midi.tracks.forEach((track, idx) => {
+                                            track.name = tempInstNameObject[idx];
+                                        })
+                                        setMidiFile(midi);
+
+                                    } else if (operateType === "add") {
+
+                                        const midi = new Midi(arrayBuffer)
+                                        const lastTrack = midi.tracks[midi.tracks.length - 1];
+                                        const newMidi = midiFile.clone();
+                                        newMidi.tracks.push(lastTrack);
+                                        setMidiFile(newMidi);
+                                        setAddInstNum(999);
+
+                                    } else if (operateType === "regen") {
+
+                                        const midi = new Midi(arrayBuffer)
+                                        const lastTrack = midi.tracks[midi.tracks.length - 1];
+                                        const newMidi = midiFile.clone()
+                                        newMidi.tracks[regenTrackIdx] = lastTrack;
+                                        setMidiFile(newMidi);
+                                        setRegenTrackIdx(null);
+
+                                    }
                                 } else if (operateType === "audio") {
 
                                     // console.log(value)
+                                    receivedData = receivedData.substring(0, receivedData.length - 1);
                                     console.log(`receivedData: ${receivedData}`);
                                     console.log(`receivedData Type: ${typeof receivedData}`);
 
@@ -315,45 +321,52 @@ const MidiView = (props) => {
                                     console.log(`uint8Array: ${uint8Array}`)
                                     console.log(`uint8Array type: ${typeof uint8Array}`)
 
-                                    const string = new TextDecoder().decode(uint8Array);
-                                    console.log(`string: ${string}`)
+                                    // const checkArr = [34, 43, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 61, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122]
+                                    // const filteredArr = uint8Array.filter(num => checkArr.includes(num));
+
+                                    // const string = new TextDecoder().decode(uint8Array);
+                                    const string = new TextDecoder('utf-8').decode(uint8Array);
+                                    // const string = new TextDecoder('utf-8').decode(filteredArr);
+                                    // console.log(`string: ${string}`)
                                     let modifiedStr = string.substring(1, string.length - 1);
-                                    console.log(`modifiedStringBack: ${modifiedStr}`)
+                                    console.log(`modifiedStr: ${modifiedStr}`)
                                     // console.log("Response body fully received");
 
-                                    // const dataURI = `data:audio/midi;base64,${modifiedStr}`
-                                    // const dataURItoBlob = (dataURI) => {
+                                    console.log(atob(modifiedStr))
 
-                                    //     const byteString = atob(dataURI.split(',')[1]);
-                                    //     const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+                                    const dataURI = `data:audio/mpeg;base64,${modifiedStr}`
+                                    const dataURItoBlob = (dataURI) => {
 
-                                    //     let ab = new ArrayBuffer(byteString.length);
-                                    //     let ia = new Uint8Array(ab);
-                                    //     for (let i = 0; i < byteString.length; i++) {
-                                    //         ia[i] = byteString.charCodeAt(i);
-                                    //     }
+                                        const byteString = atob(dataURI.split(',')[1]);
+                                        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
 
-                                    //     return new Blob([ab], { type: mimeString });
-                                    // };
+                                        let ab = new ArrayBuffer(byteString.length);
+                                        let ia = new Uint8Array(ab);
+                                        for (let i = 0; i < byteString.length; i++) {
+                                            ia[i] = byteString.charCodeAt(i);
+                                        }
 
-                                    // // console.log(arrayBuffer);
-                                    // const wavBlob = dataURItoBlob(dataURI)
-                                    // const blobUrl = URL.createObjectURL(wavBlob);
+                                        return new Blob([ab], { type: mimeString });
+                                    };
 
-                                    // Decode the base64 string
-                                    var binaryString = atob(modifiedStr);
+                                    // console.log(arrayBuffer);
+                                    const wavBlob = dataURItoBlob(dataURI)
+                                    const blobUrl = URL.createObjectURL(wavBlob);
 
-                                    // Convert the binary string to a typed array
-                                    var bytes = new Uint8Array(binaryString.length);
-                                    for (var i = 0; i < binaryString.length; i++) {
-                                        bytes[i] = binaryString.charCodeAt(i);
-                                    }
+                                    // // Decode the base64 string
+                                    // var binaryString = atob(modifiedStr);
 
-                                    // Create a Blob object from the typed array
-                                    var blob = new Blob([bytes], { type: "audio/mpeg" });
+                                    // // Convert the binary string to a typed array
+                                    // var bytes = new Uint8Array(binaryString.length);
+                                    // for (var i = 0; i < binaryString.length; i++) {
+                                    //     bytes[i] = binaryString.charCodeAt(i);
+                                    // }
 
-                                    // Optionally, you can create a URL for the blob
-                                    var blobUrl = URL.createObjectURL(blob);
+                                    // // Create a Blob object from the typed array
+                                    // var blob = new Blob([bytes], { type: "audio/mpeg" });
+
+                                    // // Optionally, you can create a URL for the blob
+                                    // var blobUrl = URL.createObjectURL(blob);
 
                                     // Create a download link
                                     const downloadLink = document.createElement('a');
@@ -382,7 +395,8 @@ const MidiView = (props) => {
                         // Process the received chunk of data (value) here
                         // console.log('Received chunk of data:', value);
 
-                        receivedData += value;
+                        // receivedData += value;
+                        receivedData += value + ',';
 
                         // Continue reading the next chunk of data
                         return readResponseBody(reader);
