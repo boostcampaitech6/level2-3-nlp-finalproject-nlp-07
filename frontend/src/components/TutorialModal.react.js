@@ -19,15 +19,14 @@ const TutorialModal = (props) => {
                 <Modal.Title>Tutorial</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Container className='m-0 p-0'>
+                <Container fluid className='m-0 p-0 justify-content-center align-items-center'>
                     <Card style={{ border: "2px solid #618eff" }}>
                         <Card.Header as="h3" style={{ color: "navy", backgroundColor: "#bdcfff" }}>
                             ① Generate Music
                         </Card.Header>
                         <Card.Body>
                             <Row>
-                                <img src="./misc_img/tutorial1.png" width="1500px" style={{ objectFit: "cover", objectPosition: "center top", height: "220px" }} />
-                                {/* <img src="./misc_img/tutorial1.png" width="1500px" /> */}
+                                <img src="./misc_img/tutorial1.png" />
                             </Row>
                         </Card.Body>
                     </Card>
@@ -37,7 +36,7 @@ const TutorialModal = (props) => {
                         </Card.Header>
                         <Card.Body>
                             <Row>
-                                <img src="./misc_img/tutorial2.png" width="1500px" />
+                                <img src="./misc_img/tutorial2.png" />
                             </Row>
                         </Card.Body>
                     </Card>
