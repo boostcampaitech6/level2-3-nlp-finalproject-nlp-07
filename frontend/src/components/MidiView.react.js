@@ -12,6 +12,8 @@ import DropdownButton from "react-bootstrap/DropdownButton";
 import MultiTrackView from './MultiTrackView.react.js'
 import SampleMidiDropdown from "../utils/SampleMidiDropdown.js";
 import InstListDropdown from "../utils/InstListDropdown.js";
+import SaveProjectModal from "./SaveProjectModal.react.js";
+import LoadProjectModal from "./LoadProjectModal.react.js";
 // import { instrumentMap } from "../utils/InstrumentList";
 
 import { Midi } from '@tonejs/midi'
@@ -61,6 +63,8 @@ const MidiView = (props) => {
     const [currentInstruments, setCurrentInstruments] = useState([]);
     const [infillHighlightBar, setInfillHighlightBar] = useState();
     const [undoSteps, setUndoSteps] = useState([]);
+    const [showSaveProjectModal, setShowSaveProjectModal] = useState(false);
+    const [showLoadProjectModal, setShowLoadProjectModal] = useState(false);
 
 
     // 서버에서 생성해서 반환해준 미디 파일을 멀티트랙 뷰로 넘겨줌
@@ -116,6 +120,36 @@ const MidiView = (props) => {
             }
         }
     };
+
+    // Load Cache MIDI Button
+    const LoadCacheMidiButton = () => {
+        return (
+            <Dropdown>
+                <Dropdown.Toggle
+                    variant="outline-secondary"
+                    className="float-end"
+                    id="dropdown-basic"
+                    size="sm"
+                    style={{ display: 'flex', alignItems: 'center', borderColor: "#c2c2c2" }}
+                >
+                    <img src="misc_img/cogwheel.png" width="18px" />
+                    {/* Menu */}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                    <Dropdown.Item
+                        onClick={() => { setShowSaveProjectModal(true); }}
+                    >
+                        Save Project
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                        onClick={() => { setShowLoadProjectModal(true); }}
+                    >
+                        Load Project
+                    </Dropdown.Item>
+                </Dropdown.Menu>
+            </Dropdown >
+        )
+    }
 
     // 특정 악기를 Regenerate 하도록 하면, 해당 악기 번호와 해당 악기만 제외한 미디 파일을 서버로 전달
     const regenerateSingleInstrument = () => {
@@ -479,33 +513,27 @@ const MidiView = (props) => {
         }
     }
 
-    const handleSaveLocalStorage = () => {
-        const midiJSON = midiFile.toJSON();
-        localStorage.setItem('temp_midifile', JSON.stringify(midiJSON));
-    }
-
-    const handleLoadLocalStorage = () => {
-        const midiJSONString = localStorage.getItem('temp_midifile');
-        const midiJSON = JSON.parse(midiJSONString);
-        const midiData = new Midi();
-        // Populate MIDI object from JSON
-        midiData.fromJSON(midiJSON);
-        setMidiFile(midiData);
-    }
-
     const handleLoadSampleMidi = async (sampleMidiPath) => {
         const midiInstance = await Midi.fromUrl(sampleMidiPath);
         setMidiFile(midiInstance);
     }
 
     return (
-        <Col xs={props.arrWidth}>
-            <Card>
-                <Card.Header as="h5">
-                    Generated Music
-                </Card.Header>
-                <Card.Body>
-                    {/* <div
+        <>
+            <Col xs={props.arrWidth}>
+                <Card>
+                    <Card.Header as="h5">
+                        <Row>
+                            <Col className="d-flex align-items-center">
+                                Generated Music
+                            </Col>
+                            <Col>
+                                <LoadCacheMidiButton />
+                            </Col>
+                        </Row>
+                    </Card.Header>
+                    <Card.Body>
+                        {/* <div
                         onDrop={handleFileDrop}
                         onDragOver={handleDragOver}
                         style={{
@@ -523,62 +551,62 @@ const MidiView = (props) => {
                             {fileName}
                         </span>
                     </div> */}
-                    <MultiTrackView
-                        isMobileDevice={props.isMobileDevice}
-                        midiFile={midiFile}
-                        totalBars={totalBars}
-                        isAdding={isAdding}
-                        regenTrackIdx={regenTrackIdx}
-                        barsToRegen={barsToRegen}
-                        isExtending={isExtending}
-                        isInfilling={isInfilling}
-                        infillHighlightBar={infillHighlightBar}
-                        instrumentObject={instrumentObject}
-                        isGenerating={props.isGenerating}
-                        handleClickInfill={handleClickInfill}
-                        setIsInfilling={setIsInfilling}
-                        setInfillHighlightBar={setInfillHighlightBar}
-                        setTotalBars={setTotalBars}
-                        setBarsToRegen={setBarsToRegen}
-                        setMidiFile={setMidiFile}
-                        setInstrumentObject={setInstrumentObject}
-                        setRegenTrackIdx={setRegenTrackIdx}
-                        setRegenInstNum={setRegenInstNum}
-                        setRegenTrigger={setRegenTrigger}
-                    />
-                    {midiFile ?
-                        <Row className="mt-3">
-                            <Col>
-                                <DropdownButton
-                                    as={ButtonGroup}
-                                    className="float-start"
-                                    title={isDownloading ? "Downloading..." : "Download"}
-                                    variant="outline-dark"
-                                    disabled={isDownloading || props.isGenerating || isAdding || isExtending || isInfilling}
-                                >
-                                    <Dropdown.Item
-                                        as="button"
-                                        key="0"
-                                        onClick={handleDownloadMidi}
+                        <MultiTrackView
+                            isMobileDevice={props.isMobileDevice}
+                            midiFile={midiFile}
+                            totalBars={totalBars}
+                            isAdding={isAdding}
+                            regenTrackIdx={regenTrackIdx}
+                            barsToRegen={barsToRegen}
+                            isExtending={isExtending}
+                            isInfilling={isInfilling}
+                            infillHighlightBar={infillHighlightBar}
+                            instrumentObject={instrumentObject}
+                            isGenerating={props.isGenerating}
+                            handleClickInfill={handleClickInfill}
+                            setIsInfilling={setIsInfilling}
+                            setInfillHighlightBar={setInfillHighlightBar}
+                            setTotalBars={setTotalBars}
+                            setBarsToRegen={setBarsToRegen}
+                            setMidiFile={setMidiFile}
+                            setInstrumentObject={setInstrumentObject}
+                            setRegenTrackIdx={setRegenTrackIdx}
+                            setRegenInstNum={setRegenInstNum}
+                            setRegenTrigger={setRegenTrigger}
+                        />
+                        {midiFile ?
+                            <Row className="mt-3">
+                                <Col>
+                                    <DropdownButton
+                                        as={ButtonGroup}
+                                        className="float-start"
+                                        title={isDownloading ? "Downloading..." : "Download"}
+                                        variant="outline-dark"
+                                        disabled={isDownloading || props.isGenerating || isAdding || isExtending || isInfilling}
                                     >
-                                        <span>MIDI File (.mid)</span>
-                                    </Dropdown.Item>
-                                    <Dropdown.Item
-                                        as="button"
-                                        key="1"
-                                        onClick={handleDownloadAudio}
-                                    >
-                                        <span>Audio File (.mp3)</span>
-                                    </Dropdown.Item>
-                                </DropdownButton>
-                                {/* <Button
+                                        <Dropdown.Item
+                                            as="button"
+                                            key="0"
+                                            onClick={handleDownloadMidi}
+                                        >
+                                            <span>MIDI File (.mid)</span>
+                                        </Dropdown.Item>
+                                        <Dropdown.Item
+                                            as="button"
+                                            key="1"
+                                            onClick={handleDownloadAudio}
+                                        >
+                                            <span>Audio File (.mp3)</span>
+                                        </Dropdown.Item>
+                                    </DropdownButton>
+                                    {/* <Button
                                     className="ms-2"
                                     variant="outline-dark"
                                     onClick={handleSaveLocalStorage}
                                 >
                                     Save cache
                                 </Button> */}
-                                {/* <Button
+                                    {/* <Button
                                     className="ms-2"
                                     variant="outline-dark"
                                     onClick={handleLoadLocalStorage}
@@ -586,71 +614,83 @@ const MidiView = (props) => {
                                 >
                                     Load Cache
                                 </Button> */}
-                                <Button
-                                    className="ms-2"
-                                    variant="outline-dark"
-                                    onClick={undoMidiChange}
-                                    disabled={!undoSteps.length > 0}
-                                >
-                                    Undo
-                                </Button>
-                                {/* <SampleMidiDropdown
+                                    <Button
+                                        className="ms-2"
+                                        variant="outline-dark"
+                                        onClick={undoMidiChange}
+                                        disabled={!undoSteps.length > 0}
+                                    >
+                                        Undo
+                                    </Button>
+                                    {/* <SampleMidiDropdown
                                     sampleTitle={sampleTitle}
                                     handleLoadSampleMidi={handleLoadSampleMidi}
                                     setSampleTitle={setSampleTitle}
                                     isGenerating={props.isGenerating}
                                     isAdding={isAdding}
                                 /> */}
-                                {/* <Button
+                                    {/* <Button
                                     className="float-start ms-2"
                                     variant="danger"
                                     onClick={() => { props.setShowErrorModal(true) }}
                                 >
                                     Error!
                                 </Button> */}
-                            </Col>
-                            <Col>
-                                <ButtonGroup className="float-end me-2">
-                                    <InstListDropdown
-                                        isMobileDevice={props.isMobileDevice}
-                                        addInstNum={addInstNum}
-                                        currentInstruments={currentInstruments}
-                                        setAddInstNum={setAddInstNum}
-                                    />
+                                </Col>
+                                <Col>
+                                    <ButtonGroup className="float-end me-2">
+                                        <InstListDropdown
+                                            isMobileDevice={props.isMobileDevice}
+                                            addInstNum={addInstNum}
+                                            currentInstruments={currentInstruments}
+                                            setAddInstNum={setAddInstNum}
+                                        />
+                                        <Button
+                                            size={props.isMobileDevice && "sm"}
+                                            variant="outline-primary"
+                                            onClick={handleClickAddInst}
+                                            disabled={props.isGenerating || isAdding || isExtending || isInfilling}
+                                        >
+                                            {isAdding ? "Adding..." : "Add Inst"}
+                                        </Button>
+                                    </ButtonGroup>
                                     <Button
+                                        disabled={totalBars === 8 || isExtending || isAdding || isInfilling}
                                         size={props.isMobileDevice && "sm"}
-                                        variant="outline-primary"
-                                        onClick={handleClickAddInst}
-                                        disabled={props.isGenerating || isAdding || isExtending || isInfilling}
+                                        variant="outline-dark"
+                                        className="float-end me-2"
+                                        onClick={handleClickExtend}
                                     >
-                                        {isAdding ? "Adding..." : "Add Inst"}
+                                        {isExtending ? "Extending..." : "Extend to 8 bars (+)"}
+                                        <Spinner
+                                            // size="sm"
+                                            className="m-0 p-0"
+                                            style={{ width: '0.8rem', height: '0.8rem', borderWidth: '2px', marginLeft: '5px', display: isExtending ? 'inline-block' : 'none' }}
+                                            variant="dark"
+                                            animation="border"
+                                            role="status"
+                                        >
+                                            <span className="visually-hidden">Loading...</span>
+                                        </Spinner>
                                     </Button>
-                                </ButtonGroup>
-                                <Button
-                                    disabled={totalBars === 8 || isExtending || isAdding || isInfilling}
-                                    size={props.isMobileDevice && "sm"}
-                                    variant="outline-dark"
-                                    className="float-end me-2"
-                                    onClick={handleClickExtend}
-                                >
-                                    {isExtending ? "Extending..." : "Extend to 8 bars (+)"}
-                                    <Spinner
-                                        // size="sm"
-                                        className="m-0 p-0"
-                                        style={{ width: '0.8rem', height: '0.8rem', borderWidth: '2px', marginLeft: '5px', display: isExtending ? 'inline-block' : 'none' }}
-                                        variant="dark"
-                                        animation="border"
-                                        role="status"
-                                    >
-                                        <span className="visually-hidden">Loading...</span>
-                                    </Spinner>
-                                </Button>
-                            </Col>
-                        </Row> : null
-                    }
-                </Card.Body>
-            </Card>
-        </Col >
+                                </Col>
+                            </Row> : null
+                        }
+                    </Card.Body>
+                </Card>
+            </Col >
+            <SaveProjectModal
+                midiFile={midiFile}
+                setMidiFile={setMidiFile}
+                showSaveProjectModal={showSaveProjectModal}
+                setShowSaveProjectModal={setShowSaveProjectModal}
+            />
+            <LoadProjectModal
+                setMidiFile={setMidiFile}
+                showSaveProjectModal={showLoadProjectModal}
+                setShowLoadProjectModal={setShowLoadProjectModal}
+            />
+        </>
     )
 }
 
