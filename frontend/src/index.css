@@ -12,7 +12,14 @@ code {
     monospace;
 }
 
-.error-modal {top:20%;}
+.error-modal {
+  top:20%;
+}
+
+.save-modal {
+  top:20%;
+  max-width: 50vw !important;
+}
 
 .tutorial-modal {
   max-width: 85vw !important;
@@ -20,11 +27,9 @@ code {
 
 .prompt-card {
   width: '20rem';
-  /* background-color: "blue"; */
   background-color: "white";
   color: "#7a7a7a";
   border-color: "#dbdbdb";
-  /* border: none; */
   padding: 10px 20px;
   cursor: pointer;
 }

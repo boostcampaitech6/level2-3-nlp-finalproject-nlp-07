@@ -111,6 +111,7 @@ const TextPromptView = (props) => {
           className="float-end me-2"
           id="dropdown-basic"
           size="sm"
+          style={{ display: 'flex', alignItems: 'center', borderColor:"#c2c2c2" }}
         >
           {language}
         </Dropdown.Toggle>
@@ -276,6 +277,7 @@ const TextPromptView = (props) => {
                 className="float-end"
                 variant="outline-secondary"
                 size="sm"
+                style={{ borderColor: "#c2c2c2" }}
                 onClick={() => { setShowTextPrompt((prev) => !prev) }}
               >
                 {showTextPrompt ? "Hide" : "Show"}
