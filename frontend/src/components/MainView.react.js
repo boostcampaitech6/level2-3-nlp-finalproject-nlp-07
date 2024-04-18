@@ -14,7 +14,7 @@ import Row from 'react-bootstrap/Row';
 
 
 const MainView = () => {
-    const [underMaintenance, setUnderMaintenance] = useState(true);
+    const [underMaintenance, setUnderMaintenance] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [midiBlob, setMidiBlob] = useState();
     const [generateConditions, setGenerateConditions] = useState({});
