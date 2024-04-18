@@ -7,12 +7,14 @@ import TextPromptView from "./TextPromptView.react";
 import ErrorModal from "./ErrorModal.react";
 import TutorialModal from "./TutorialModal.react";
 import InfoModal from "./InfoModal.react";
+import Maintenance from "./Maintenance.react";
 
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 
 
 const MainView = () => {
+    const [underMaintenance, setUnderMaintenance] = useState(true);
     const [isGenerating, setIsGenerating] = useState(false);
     const [midiBlob, setMidiBlob] = useState();
     const [generateConditions, setGenerateConditions] = useState({});
@@ -34,10 +36,10 @@ const MainView = () => {
 
     // 총 생성 수 가져오는 함수
     const getGenerationCount = () => {
-        
+
         let url;
         url = "https://78d4shtwvg.execute-api.ap-northeast-2.amazonaws.com/default/codeplayGetGenerationCount";
-        
+
         fetch(
             url,
             {
@@ -51,38 +53,38 @@ const MainView = () => {
             .then((response) => {
                 const reader = response.body.getReader();
                 let receivedData = ''; // Variable to store the received data
-        
+
                 // Define a function to recursively read the response body
                 function readResponseBody(reader) {
-                  return reader.read().then(async ({ done, value }) => {
-                    if (done) {
-                      // console.log('Received data:', receivedData); // Access the received data here
-                      try {
-                        // console.log('Response body fully received');
-                      } catch (error) {
-                        console.error('Error reading file as array buffer:', error);
-                      }
-                      return;
-                    }
-        
-                    // Uint8Array 디코딩
-                    const string = new TextDecoder().decode(value);
-                    const responseJson = JSON.parse(string);
+                    return reader.read().then(async ({ done, value }) => {
+                        if (done) {
+                            // console.log('Received data:', receivedData); // Access the received data here
+                            try {
+                                // console.log('Response body fully received');
+                            } catch (error) {
+                                console.error('Error reading file as array buffer:', error);
+                            }
+                            return;
+                        }
 
-                    // console.log(responseJson);
-                    setGenerationCount(responseJson.total_generate);
-                    receivedData += value;
-        
-                    // Continue reading the next chunk of data
-                    return readResponseBody(reader);
-                  }).catch((error) => {
-                    console.error('Error reading response body:', error);
-                  });
+                        // Uint8Array 디코딩
+                        const string = new TextDecoder().decode(value);
+                        const responseJson = JSON.parse(string);
+
+                        // console.log(responseJson);
+                        setGenerationCount(responseJson.total_generate);
+                        receivedData += value;
+
+                        // Continue reading the next chunk of data
+                        return readResponseBody(reader);
+                    }).catch((error) => {
+                        console.error('Error reading response body:', error);
+                    });
                 }
-        
+
                 // Start reading the response body
                 readResponseBody(reader);
-        
+
             })
             .catch((error) => {
                 console.error(error);
@@ -101,32 +103,34 @@ const MainView = () => {
                 setShowTutorialModal={setShowTutorialModal}
                 setShowInfoModal={setShowInfoModal}
             />
-            <Container fluid className="p-4">
-                <Row>
-                    <TextPromptView
-                        isMobileDevice={isMobileDevice}
-                        arrWidth={arrWidth}
-                        midiBlob={midiBlob}
-                        isGenerating={isGenerating}
-                        setMidiBlob={setMidiBlob}
-                        setGenerateConditions={setGenerateConditions}
-                        setShowErrorModal={setShowErrorModal}
-                        setErrorLog={setErrorLog}
-                        setIsGenerating={setIsGenerating}
-                    />
-                    <MidiView
-                        isMobileDevice={isMobileDevice}
-                        arrWidth={arrWidth}
-                        midiBlob={midiBlob}
-                        isGenerating={isGenerating}
-                        generateConditions={generateConditions}
-                        setMidiBlob={setMidiBlob}
-                        setShowErrorModal={setShowErrorModal}
-                        setIsGenerating={setIsGenerating}
-                        setErrorLog={setErrorLog}
-                    />
-                </Row>
-            </Container>
+            {underMaintenance ?
+                <Maintenance /> :
+                <Container fluid className="p-4">
+                    <Row>
+                        <TextPromptView
+                            isMobileDevice={isMobileDevice}
+                            arrWidth={arrWidth}
+                            midiBlob={midiBlob}
+                            isGenerating={isGenerating}
+                            setMidiBlob={setMidiBlob}
+                            setGenerateConditions={setGenerateConditions}
+                            setShowErrorModal={setShowErrorModal}
+                            setErrorLog={setErrorLog}
+                            setIsGenerating={setIsGenerating}
+                        />
+                        <MidiView
+                            isMobileDevice={isMobileDevice}
+                            arrWidth={arrWidth}
+                            midiBlob={midiBlob}
+                            isGenerating={isGenerating}
+                            generateConditions={generateConditions}
+                            setMidiBlob={setMidiBlob}
+                            setShowErrorModal={setShowErrorModal}
+                            setIsGenerating={setIsGenerating}
+                            setErrorLog={setErrorLog}
+                        />
+                    </Row>
+                </Container>}
             <ErrorModal
                 errorLog={errorLog}
                 showErrorModal={showErrorModal}
